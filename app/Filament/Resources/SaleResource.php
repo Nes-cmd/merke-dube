@@ -9,17 +9,19 @@ use App\Models\Item;
 use App\Models\Sale;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class SaleResource extends Resource
 {
     protected static ?string $model = Sale::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-currency-dollar';
 
     protected static ?int $navigationSort = 4;
 
@@ -79,7 +81,7 @@ class SaleResource extends Resource
                 Tables\Columns\TextColumn::make('credit')->numeric()->sortable(),
                 Tables\Columns\TextColumn::make('payment_status')->badge(),
                 Tables\Columns\TextColumn::make('sold_at')->dateTime()->sortable(),
-                Tables\Columns\TextColumn::make('note')->searchable(),
+                Tables\Columns\TextColumn::make('note')->searchable()->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -98,6 +100,17 @@ class SaleResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\Action::make('Credit received')->button()->form([
+                    Forms\Components\TextInput::make('received_price')->numeric()->required()->default(fn(Model $record) => $record->credit),
+                    Forms\Components\Select::make('status')->options(PaymentStatus::class)->required(),
+                ])->action(function(Model $record, array $data){
+                    $record->credit = $record->credit - $data['received_price'];
+                    $record->received_price = $record->received_price + $data['received_price'];
+                    $record->payment_status = $data['status'];
+                    $record->save();
+
+                    Notification::make()->title('Credit payment updated successfully.')->success()->send();
+                })
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

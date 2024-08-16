@@ -22,7 +22,7 @@ class SubcategoryResource extends Resource
 
     protected static ?string $navigationGroup = 'Others';
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-bars-3-center-left';
 
     public static function form(Form $form): Form
     {

@@ -12,6 +12,13 @@ class Item extends Model
     // Allow mass assignment for all attributes
     protected $guarded = [];
 
+    protected function casts() : array
+    {
+        return [
+            'status' => \App\Enums\PaymentStatus::class,
+        ];
+    }
+
     /**
      * Get the category that the item belongs to.
      */

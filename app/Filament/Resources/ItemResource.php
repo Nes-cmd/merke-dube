@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\PaymentStatus;
 use App\Filament\Resources\ItemResource\Pages;
 use App\Filament\Resources\ItemResource\RelationManagers;
 use App\Models\Category;
@@ -10,11 +11,13 @@ use App\Models\Store;
 use App\Models\Subcategory;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\Summarizers\Sum;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class ItemResource extends Resource
@@ -23,7 +26,7 @@ class ItemResource extends Resource
 
     protected static ?int $navigationSort = 4;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-arrow-right-end-on-rectangle';
 
     public static function form(Form $form): Form
     {
@@ -99,6 +102,16 @@ class ItemResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\Action::make('Pay credit')->button()->button()->form([
+                    Forms\Components\TextInput::make('paid')->numeric()->required()->default(fn(Model $record) => $record->credit),
+                    Forms\Components\Select::make('status')->options(PaymentStatus::class)->required(),
+                ])->action(function(Model $record, array $data){
+                    $record->paid = $record->paid + $data['paid'];
+                    $record->credit = $record->credit - $data['paid'];
+                    $record->status = $data['status'];
+                    $record->save();
+                    Notification::make()->title('Credit payment updated successfully.')->success()->send();
+                })
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

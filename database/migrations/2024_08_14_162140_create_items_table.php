@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\PaymentStatus;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -19,6 +20,7 @@ class CreateItemsTable extends Migration
             $table->string('color')->nullable();
             $table->string('size')->nullable();
             $table->string('photo')->nullable();
+            $table->string('status')->default(PaymentStatus::Pending->value);
             $table->decimal('paid')->nullable()->default(0);
             $table->decimal('credit')->nullable()->default(0);
             $table->unsignedBigInteger('category_id');
