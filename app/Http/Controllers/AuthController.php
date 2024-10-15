@@ -70,7 +70,7 @@ class AuthController extends Controller
                 // $availableCodes = collect(config('translation-manager.available_locales'))->pluck('code')->toArray();
                 // if (in_array($locale, $availableCodes)) request()->session()->put('language', $locale);
 
-                return redirect('dashboard');
+                return redirect('/admin');
             } else {
                 // for some reason, the access_token was not available 
                 // debugging goes here 
