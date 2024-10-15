@@ -7,9 +7,11 @@
     "require": {
         "php": "^8.2",
         "filament/filament": "^3.2",
+        "joshembling/image-optimizer": "^1.2",
         "laravel/framework": "^11.9",
+        "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.9",
-        "joshembling/image-optimizer": "^1.2"
+        "rakutentech/laravel-request-docs": "^2.41"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
@@ -24,7 +26,10 @@
             "App\\": "app/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/"
-        }
+        },
+        "files": [
+            "app/Helpers/GlobalHelperFunctions.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {
