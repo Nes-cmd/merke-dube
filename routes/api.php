@@ -10,12 +10,13 @@ use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('auth/login', [AuthController::class, 'login']);
+Route::middleware('api')->post('auth/register', [AuthController::class, 'register']);
 
 Route::middleware('auth:sanctum')->group(function(){
     Route::get('stores', [StoreController::class, 'index']);
     Route::post('add-store', [StoreController::class, 'create']);
     Route::post('edit-store', [StoreController::class, 'edit']);
-    Route::delete('delete-store', [StoreController::class, 'delete']);
+    Route::delete('delete-store/{id}', [StoreController::class, 'delete']);
 
     Route::get('categories', [CategoryController::class, 'index']);
     Route::post('add-categories', [CategoryController::class, 'create']);
@@ -28,16 +29,16 @@ Route::middleware('auth:sanctum')->group(function(){
     Route::delete('delete-sub-categories', [SubcategoryController::class, 'delete']);
 
     Route::get('products', [ItemController::class, 'index']);
-    Route::post('credit-payed', [ItemController::class, 'creditPayed']);
+    Route::post('product-credit-paid/{id}', [ItemController::class, 'creditPayed']);
     Route::post('add-product', [ItemController::class, 'create']);
     Route::post('update-products', [ItemController::class, 'edit']);
     Route::delete('delete-products', [ItemController::class, 'delete']);
 
     Route::get('sales', [SaleController::class, 'index']);
     Route::post('add-sales', [SaleController::class, 'create']);
-    Route::post('credit-received', [SaleController::class, 'cereditReceived']);
+    Route::post('credit-received/{id}', [SaleController::class, 'cereditReceived']);
     Route::post('update-sales', [SaleController::class, 'edit']);
-    Route::delete('delete', [SaleController::class, 'delete']);
+    Route::delete('delete-sale/{id}', [SaleController::class, 'delete']);
 
     Route::post('register', [UserController::class, 'register']);
     Route::post('add-worker', [UserController::class, 'addWorker']);
