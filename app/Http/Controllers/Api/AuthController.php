@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
 use App\Http\Resources\UserResource;
+use App\Models\Owner;
 use App\Models\User;
 use Exception;
 use Illuminate\Http\Request;
@@ -46,12 +47,20 @@ class AuthController extends Controller
                     'siso_id' => $ssoUser['id'],
                     'name' => $ssoUser['name'],
                     'email' => $ssoUser['email'],
-                    'phone' => $ssoUser['phone'],
+                    'phone_number' => $ssoUser['phone'],
                 ]);
+
+                $owner = Owner::create([
+                    'name' => $user->name,
+                    'phone_number' => $user->phone_number,
+                    'admin_id' => $user->id,
+                ]);
+
+                $user->works_for = $owner->id;
+                $user->save();
             }
 
             $tokens = $user->createToken('API-TOKEN');
-            // Auth::login($user);
 
             return response([
                 'user' => $user,
@@ -78,8 +87,17 @@ class AuthController extends Controller
                     'siso_id' => $ssoUser['id'],
                     'name' => $ssoUser['name'],
                     'email' => $ssoUser['email'],
-                    'phone' => $ssoUser['phone'],
+                    'phone_number' => $ssoUser['phone'],
                 ]);
+
+                $owner = Owner::create([
+                    'name' => $user->name,
+                    'phone_number' => $user->phone_number,
+                    'admin_id' => $user->id,
+                ]);
+
+                $user->works_for = $owner->id;
+                $user->save();
 
                 return response([
                     'user' => $user,

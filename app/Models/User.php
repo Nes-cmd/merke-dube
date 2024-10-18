@@ -21,7 +21,11 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'siso_id'
+        'siso_id',
+        'phone_number',
+        'phone_verified_at',
+        'is_admin',
+        'has_subscribed'
     ];
 
     /**

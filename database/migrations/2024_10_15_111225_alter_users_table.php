@@ -15,6 +15,10 @@ return new class extends Migration
             $table->string('siso_id');
             $table->string('password')->nullable()->change();
             $table->string('email')->nullable()->change();
+
+            $table->timestamp('phone_verified_at')->nullable();
+            $table->boolean('is_owner')->default(1);
+            $table->boolean('has_subscribed')->default(0);
         });
     }
 
@@ -25,6 +29,10 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table){
             $table->dropColumn('siso_id');
+
+            $table->dropColumn('phone_verified_at')->nullable();
+            $table->dropColumn('is_owner')->default(1);
+            $table->dropColumn('has_subscribed')->default(0);
         });
     }
 };
