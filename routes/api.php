@@ -20,19 +20,20 @@ Route::middleware('auth:sanctum')->group(function(){
 
     Route::get('categories', [CategoryController::class, 'index']);
     Route::post('add-categories', [CategoryController::class, 'create']);
+
     Route::post('update-categories', [CategoryController::class, 'edit']);
-    Route::delete('delete-categories', [CategoryController::class, 'delete']);
+    Route::delete('delete-categories/{id}', [CategoryController::class, 'delete']);
 
     Route::get('sub-categories', [SubcategoryController::class, 'index']);
     Route::post('add-sub-categories', [SubcategoryController::class, 'create']);
     Route::post('update-sub-categories', [SubcategoryController::class, 'edit']);
-    Route::delete('delete-sub-categories', [SubcategoryController::class, 'delete']);
+    Route::delete('delete-sub-categories/{id}', [SubcategoryController::class, 'delete']);
 
     Route::get('products', [ItemController::class, 'index']);
     Route::post('product-credit-paid/{id}', [ItemController::class, 'creditPayed']);
     Route::post('add-product', [ItemController::class, 'create']);
     Route::post('update-products', [ItemController::class, 'edit']);
-    Route::delete('delete-products', [ItemController::class, 'delete']);
+    Route::delete('delete-products/{id}', [ItemController::class, 'delete']);
 
     Route::get('sales', [SaleController::class, 'index']);
     Route::post('add-sales', [SaleController::class, 'create']);
@@ -41,6 +42,7 @@ Route::middleware('auth:sanctum')->group(function(){
     Route::delete('delete-sale/{id}', [SaleController::class, 'delete']);
 
     Route::post('register', [UserController::class, 'register']);
+    Route::get('workers', [UserController::class, 'workers']);
     Route::post('add-worker', [UserController::class, 'addWorker']);
     Route::delete('remove-worker', [UserController::class, 'removeWorker']);
 });

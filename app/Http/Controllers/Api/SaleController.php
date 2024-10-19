@@ -21,7 +21,15 @@ class SaleController extends Controller
         $data['approved_by'] = auth()->id();
         $data['sold_at'] = now();
 
-        return Sale::create($data);
+        $sale = Sale::create($data);
+        
+        $sale = Sale::with('item')->find($sale->id);
+
+        $item = $sale->item;
+        $item->quantity = $item->quantity - $sale->quantity_sold;
+        $item->save();
+
+        return $sale;
     }
 
     public function edit(){
