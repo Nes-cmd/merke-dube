@@ -16,7 +16,7 @@ class ItemController extends Controller
     public function index() {
 
         $user = auth()->user();
-        return ItemResource::collection(Item::all());
+        // return ItemResource::collection(Item::all());
         return ItemResource::collection(Item::where('owner_id', $user->works_for)->get());
     }
 
@@ -25,7 +25,8 @@ class ItemController extends Controller
         $data['owner_id'] = auth()->user()->works_for;
         $data['approved_by'] = auth()->id();
 
-        return Item::create($data);
+        
+        return new ItemResource(Item::create($data));
         
     }
 

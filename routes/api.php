@@ -44,6 +44,6 @@ Route::middleware('auth:sanctum')->group(function(){
     Route::post('register', [UserController::class, 'register']);
     Route::get('workers', [UserController::class, 'workers']);
     Route::post('add-worker', [UserController::class, 'addWorker']);
-    Route::delete('remove-worker', [UserController::class, 'removeWorker']);
+    Route::delete('remove-worker/{id}', [UserController::class, 'removeWorker']);
 });
 

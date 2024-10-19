@@ -21,10 +21,12 @@ class SubcategoryController extends Controller
     }
 
     public function create(SubCategoryRequest $request){
-        return Subcategory::create([
+        $category = Subcategory::create([
             'name' => $request->name,
             'category_id' => $request->category_id,
         ]);
+
+        return Subcategory::with('category')->find($category->id);
     }
 
     public function edit(){

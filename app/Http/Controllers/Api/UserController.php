@@ -16,7 +16,8 @@ class UserController extends Controller
 
     public function workers()
     {
-        $workers = User::all();
+        // $owner = ;
+        $workers = User::where('works_for', auth()->user()->works_for)->get();
         return $workers;
     }
 
@@ -43,7 +44,7 @@ class UserController extends Controller
             ])->post(env('SISO_AUTH_URL') . '/api/create-user', $data);
 
             $payload = $response->json();
-            return $response->body();
+            
             if ($payload['status'] == 'success') {
                 $ssoUser =  $payload['user'];
 
@@ -53,6 +54,7 @@ class UserController extends Controller
                     'email' => $ssoUser['email'],
                     'phone_number' => $ssoUser['phone'],
                     'works_for' => auth()->user()->works_for,
+                    'is_owner' => 0,
                 ]);
 
 
@@ -67,5 +69,10 @@ class UserController extends Controller
         }
     }
 
-    public function removeWorker() {}
+    public function removeWorker($id) {
+        $user = User::find($id);
+        $user->works_for = null;
+        $user->save();
+        return 1;
+    }
 }
