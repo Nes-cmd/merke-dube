@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\ItemController;
 use App\Http\Controllers\Api\SaleController;
 use App\Http\Controllers\Api\StoreController;
@@ -14,6 +15,8 @@ Route::post('auth/login', [AuthController::class, 'login']);
 Route::middleware('api')->post('auth/register', [AuthController::class, 'register']);
 
 Route::middleware('auth:sanctum')->group(function(){
+    Route::get('get-dashboard-data', [DashboardController::class, 'index']);
+
     Route::get('stores', [StoreController::class, 'index']);
     Route::post('add-store', [StoreController::class, 'create']);
     Route::post('edit-store', [StoreController::class, 'edit']);
