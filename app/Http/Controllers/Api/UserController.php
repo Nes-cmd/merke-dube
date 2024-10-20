@@ -16,8 +16,8 @@ class UserController extends Controller
 
     public function workers()
     {
-        // $owner = ;
-        $workers = User::where('works_for', auth()->user()->works_for)->get();
+        $user = auth()->user();
+        $workers = User::where('works_for', $user->works_for)->where('id', '!=', $user->ud)->get();
         return $workers;
     }
 

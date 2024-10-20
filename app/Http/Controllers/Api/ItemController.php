@@ -34,8 +34,8 @@ class ItemController extends Controller
         
     }
 
-    public function delete() {
-        
+    public function delete($id) {
+        return Item::findOrFail($id)->delete();
     }
 
     public function creditPayed(PayCreditRequest $request, $id) {

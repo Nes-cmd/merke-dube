@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\SaleController;
 use App\Http\Controllers\Api\StoreController;
 use App\Http\Controllers\Api\SubcategoryController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Middleware\AdminMiddleware;
 use Illuminate\Support\Facades\Route;
 
 Route::post('auth/login', [AuthController::class, 'login']);
@@ -33,17 +34,18 @@ Route::middleware('auth:sanctum')->group(function(){
     Route::post('product-credit-paid/{id}', [ItemController::class, 'creditPayed']);
     Route::post('add-product', [ItemController::class, 'create']);
     Route::post('update-products', [ItemController::class, 'edit']);
-    Route::delete('delete-products/{id}', [ItemController::class, 'delete']);
+    Route::middleware(AdminMiddleware::class)->delete('delete-product/{id}', [ItemController::class, 'delete']);
 
     Route::get('sales', [SaleController::class, 'index']);
     Route::post('add-sales', [SaleController::class, 'create']);
     Route::post('credit-received/{id}', [SaleController::class, 'cereditReceived']);
     Route::post('update-sales', [SaleController::class, 'edit']);
-    Route::delete('delete-sale/{id}', [SaleController::class, 'delete']);
+    Route::delete('delete-sale/{id}', [SaleController::class, 'delete'])->middleware(AdminMiddleware::class);
 
     Route::post('register', [UserController::class, 'register']);
-    Route::get('workers', [UserController::class, 'workers']);
-    Route::post('add-worker', [UserController::class, 'addWorker']);
-    Route::delete('remove-worker/{id}', [UserController::class, 'removeWorker']);
+
+    Route::middleware(AdminMiddleware::class)->get('workers', [UserController::class, 'workers']);
+    Route::middleware(AdminMiddleware::class)->post('add-worker', [UserController::class, 'addWorker']);
+    Route::middleware(AdminMiddleware::class)->delete('remove-worker/{id}', [UserController::class, 'removeWorker']);
 });
 

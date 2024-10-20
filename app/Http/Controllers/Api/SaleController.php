@@ -12,7 +12,8 @@ use App\Models\Sale;
 class SaleController extends Controller
 {
     public function index()  {
-        return SaleResource::collection(Sale::with('item', 'approvedBy')->get());
+        $sales = Sale::with('item', 'approvedBy')->where('owner_id', auth()->user()->works_for)->get();
+        return SaleResource::collection($sales);
     }
 
     public function create(SaleRequest $request){

@@ -11,7 +11,7 @@ use Illuminate\Http\Request;
 class StoreController extends Controller
 {
     public function index()  {
-        $stores = Store::with('owner')->withCount('items')->get();
+        $stores = Store::with('owner')->withCount('items')->where('owner_id', auth()->user()->works_for)->get();
         return StoreResource::collection($stores);
     }
 
