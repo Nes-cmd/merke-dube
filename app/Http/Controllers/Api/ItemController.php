@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\ItemRequest;
 use App\Http\Requests\PayCreditRequest;
 use App\Http\Resources\ItemResource;
+use App\Models\CreditHistory;
 use App\Models\Item;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -18,6 +19,15 @@ class ItemController extends Controller
         $user = auth()->user();
         // return ItemResource::collection(Item::all());
         return ItemResource::collection(Item::where('owner_id', $user->works_for)->get());
+    }
+
+    public function itemCreditHistory($itemId) {
+        $user = auth()->user();
+        $history = CreditHistory::with('approver')->where('creditable_type', Item::class)->where('creditable_id', $itemId);
+        if($user->is_owner){
+            return $history->get();
+        }
+        return $history->where('approver_id', $user->id)->get();
     }
 
     public function create(ItemRequest $request){
@@ -48,6 +58,18 @@ class ItemController extends Controller
         }
 
         $item->save();
+
+
+        CreditHistory::create([
+            'creditable_type' => Item::class,
+            'creditable_id' => $item->id,
+            'value' => $request->credit_payed,
+            'approver_id' => auth()->id(),
+            'note' => $request->note,
+            'owner_id' => $item->owner_id,
+        ]);
+
+
         return $item;
     }
 }

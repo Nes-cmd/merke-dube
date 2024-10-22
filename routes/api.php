@@ -34,12 +34,14 @@ Route::middleware('auth:sanctum')->group(function(){
     Route::delete('delete-sub-categories/{id}', [SubcategoryController::class, 'delete']);
 
     Route::get('products', [ItemController::class, 'index']);
+    Route::get('product-credit-history/{itemId}', [ItemController::class, 'itemCreditHistory']);
     Route::post('product-credit-paid/{id}', [ItemController::class, 'creditPayed']);
     Route::post('add-product', [ItemController::class, 'create']);
     Route::post('update-products', [ItemController::class, 'edit']);
     Route::middleware(AdminMiddleware::class)->delete('delete-product/{id}', [ItemController::class, 'delete']);
 
     Route::get('sales', [SaleController::class, 'index']);
+    Route::get('sale-credit-history/{saleId}', [SaleController::class, 'saleCreditHistory']);
     Route::post('add-sales', [SaleController::class, 'create']);
     Route::post('credit-received/{id}', [SaleController::class, 'cereditReceived']);
     Route::post('update-sales', [SaleController::class, 'edit']);
