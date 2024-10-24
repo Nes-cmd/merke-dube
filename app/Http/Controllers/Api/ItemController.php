@@ -70,6 +70,6 @@ class ItemController extends Controller
         ]);
 
 
-        return $item;
+        return new ItemResource($item);
     }
 }
