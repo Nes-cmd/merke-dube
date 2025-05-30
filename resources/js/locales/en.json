@@ -24,5 +24,24 @@
         "Links": "Quick Links",
         "Languages": "Languages",
         "Footer Description": "Suqee is a comprehensive inventory and credit management system designed specifically for local businesses."
+    },
+    "Dashboard": "Dashboard",
+    "Sales": "Sales",
+    "Products": "Products",
+    "Customers": "Customers",
+    "Transactions": "Transactions",
+    "Settings": "Settings",
+    "Profile": "Profile",
+    "Logout": "Logout",
+    "home": {
+        "Dashboard": "Dashboard",
+        "Total Products": "Total Products",
+        "Overview of all inventory items available": "Overview of all inventory items available",
+        "Total Sales": "Total Sales",
+        "Sales made this month": "Sales made this month",
+        "Low Stock Items": "Low Stock Items",
+        "Items that need restocking soon": "Items that need restocking soon",
+        "Orders Progress": "Orders Progress",
+        "Manage your inventory with ease": "Manage your inventory with ease"
     }
 }

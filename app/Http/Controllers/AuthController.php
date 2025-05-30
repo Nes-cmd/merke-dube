@@ -13,7 +13,7 @@ class AuthController extends Controller
 {
     public function redirect()
     {
-        Log::info('this has been called');
+       
         $query = http_build_query(
             array(
                 'client_id' => env('SISO_CLIENT_ID'),
@@ -28,7 +28,7 @@ class AuthController extends Controller
 
     public function callback(Request $request)
     {
-        Log::info('this has been called');
+
         if (isset($request->code) && $request->code) {
             $response = Http::post(env('SISO_AUTH_URL') . '/oauth/token', [
                 'grant_type' => 'authorization_code',
@@ -71,7 +71,7 @@ class AuthController extends Controller
                 // $availableCodes = collect(config('translation-manager.available_locales'))->pluck('code')->toArray();
                 // if (in_array($locale, $availableCodes)) request()->session()->put('language', $locale);
 
-                return redirect('/admin');
+                return redirect('/dashboard');
             } else {
                 // for some reason, the access_token was not available 
                 // debugging goes here 
@@ -100,6 +100,6 @@ class AuthController extends Controller
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-        return redirect(env('SISO_AUTH_URL') . "/logout-sso-client?callback=" . url('/'));
+        return Inertia::location(env('SISO_AUTH_URL') . "/logout-sso-client?callback=" . url('/'));
     }
 }
