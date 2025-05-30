@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Inertia\Inertia;
 
 class AuthController extends Controller
 {
@@ -22,7 +23,7 @@ class AuthController extends Controller
             )
         );
 
-        return redirect(env('SISO_AUTH_URL') . '/oauth/authorize?' . $query);
+        return Inertia::location(env('SISO_AUTH_URL') . '/oauth/authorize?' . $query);
     }
 
     public function callback(Request $request)

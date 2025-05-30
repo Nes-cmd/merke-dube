@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -24,4 +25,11 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-require __DIR__.'/auth.php';
+// Language switch route
+Route::get('/language/{locale}', [App\Http\Controllers\LanguageController::class, 'switch'])
+    ->name('language.switch');
+
+
+Route::get('/auth/callback', [AuthController::class, 'callback']);
+Route::middleware('guest')->get('auth/login', [AuthController::class, 'redirect'])->name('login');
+
