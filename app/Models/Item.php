@@ -12,6 +12,24 @@ class Item extends Model
     // Allow mass assignment for all attributes
     protected $guarded = [];
 
+    protected $fillable = [
+        'name',
+        'color',
+        'size',
+        'photo',
+        'paid',
+        'credit',
+        'unit_price',
+        'quantity',
+        'remark',
+        'approved_by',
+        'category_id',
+        'subcategory_id',
+        'store_id',
+        'owner_id',
+        'status',
+    ];
+
     protected function casts() : array
     {
         return [

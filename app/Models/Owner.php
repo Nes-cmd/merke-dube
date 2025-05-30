@@ -12,6 +12,13 @@ class Owner extends Model
     // Allow mass assignment for all attributes
     protected $guarded = [];
 
+    protected $fillable = [
+        'admin_id',
+        'name',
+        'phone_number',
+        'profile',
+    ];
+
     /**
      * Get the admin associated with the owner.
      */

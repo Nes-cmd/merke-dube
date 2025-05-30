@@ -1,21 +1,35 @@
 import React, { useState, useEffect } from 'react';
 import { Head, useForm } from '@inertiajs/react';
-import { Card, Button, Tabs, Form, Input, Table, Popconfirm, message, Radio, Divider } from 'antd';
-import { PlusOutlined, DeleteOutlined, GlobalOutlined, UserOutlined, TeamOutlined } from '@ant-design/icons';
+import { Card, Button, Tabs, Form, Input, Table, Popconfirm, message, Radio, Divider, Modal } from 'antd';
+import { 
+  PlusOutlined, 
+  DeleteOutlined, 
+  GlobalOutlined, 
+  UserOutlined, 
+  TeamOutlined,
+  AppstoreOutlined
+} from '@ant-design/icons';
 import { useTranslation } from '@/Contexts/I18nContext';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 
 const { TabPane } = Tabs;
+const { TextArea } = Input;
 
-const Settings = ({ auth, workers, isOwner, flash }) => {
+const Settings = ({ auth, workers, isOwner, categories, flash }) => {
   const { t, locale, setLocale } = useTranslation();
   const [activeTab, setActiveTab] = useState('1');
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const [categoryModalVisible, setCategoryModalVisible] = useState(false);
+  const [teamMemberModalVisible, setTeamMemberModalVisible] = useState(false);
   
-  const { data, setData, post, processing, errors, reset } = useForm({
+  const teamMemberForm = useForm({
     name: '',
     phone: '',
-    email: '',
+  });
+  
+  const categoryForm = useForm({
+    name: '',
+    description: '',
   });
   
   const { delete: destroy } = useForm();
@@ -39,11 +53,12 @@ const Settings = ({ auth, workers, isOwner, flash }) => {
     }
   }, [flash]);
 
-  const handleAddWorker = () => {
-    post(route('settings.add-worker'), {
+  const handleAddTeamMember = () => {
+    teamMemberForm.post(route('settings.add-worker'), {
       onSuccess: () => {
-        reset();
-        message.success(t('Worker added successfully'));
+        setTeamMemberModalVisible(false);
+        teamMemberForm.reset();
+        message.success(t('Team member added successfully'));
       },
       onError: (errors) => {
         console.error(errors);
@@ -51,13 +66,36 @@ const Settings = ({ auth, workers, isOwner, flash }) => {
     });
   };
 
-  const handleRemoveWorker = (id) => {
+  const handleRemoveTeamMember = (id) => {
     destroy(route('settings.remove-worker', id), {
       onSuccess: () => {
-        message.success(t('Worker removed successfully'));
+        message.success(t('Team member removed successfully'));
       },
       onError: () => {
-        message.error(t('Failed to remove worker'));
+        message.error(t('Failed to remove team member'));
+      }
+    });
+  };
+  
+  const handleAddCategory = () => {
+    categoryForm.post(route('settings.add-category'), {
+      onSuccess: () => {
+        setCategoryModalVisible(false);
+        categoryForm.reset();
+      },
+      onError: (errors) => {
+        console.error(errors);
+      }
+    });
+  };
+  
+  const handleDeleteCategory = (id) => {
+    destroy(route('settings.delete-category', id), {
+      onSuccess: () => {
+        message.success(t('Category deleted successfully'));
+      },
+      onError: () => {
+        message.error(t('Failed to delete category'));
       }
     });
   };
@@ -67,17 +105,11 @@ const Settings = ({ auth, workers, isOwner, flash }) => {
     setLocale(newLocale);
   };
 
-  const columns = [
+  const teamMembersColumns = [
     {
       title: t('Name'),
       dataIndex: 'name',
       key: 'name',
-    },
-    {
-      title: t('Email'),
-      dataIndex: 'email',
-      key: 'email',
-      responsive: ['md'],
     },
     {
       title: t('Phone'),
@@ -89,8 +121,36 @@ const Settings = ({ auth, workers, isOwner, flash }) => {
       key: 'actions',
       render: (_, record) => (
         <Popconfirm
-          title={t('Are you sure you want to remove this worker?')}
-          onConfirm={() => handleRemoveWorker(record.id)}
+          title={t('Are you sure you want to remove this team member?')}
+          onConfirm={() => handleRemoveTeamMember(record.id)}
+          okText={t('Yes')}
+          cancelText={t('No')}
+        >
+          <Button danger icon={<DeleteOutlined />} />
+        </Popconfirm>
+      ),
+    },
+  ];
+  
+  const categoriesColumns = [
+    {
+      title: t('Name'),
+      dataIndex: 'name',
+      key: 'name',
+    },
+    {
+      title: t('Description'),
+      dataIndex: 'description',
+      key: 'description',
+      responsive: ['md'],
+    },
+    {
+      title: t('Actions'),
+      key: 'actions',
+      render: (_, record) => (
+        <Popconfirm
+          title={t('Are you sure you want to delete this category?')}
+          onConfirm={() => handleDeleteCategory(record.id)}
           okText={t('Yes')}
           cancelText={t('No')}
         >
@@ -130,11 +190,13 @@ const Settings = ({ auth, workers, isOwner, flash }) => {
               >
                 <Card title={t('Language Settings')} className="mb-6">
                   <div className="py-4">
-                    <h3 className="text-lg font-medium mb-4">{t('Select Interface Language')}</h3>
-                    <Radio.Group value={locale} onChange={handleLanguageChange}>
-                      <Radio.Button value="en">English</Radio.Button>
-                      <Radio.Button value="am">አማርኛ</Radio.Button>
-                    </Radio.Group>
+                    <div className="mb-4">
+                      <div className="text-lg font-medium mb-2">{t('Select Language')}</div>
+                      <Radio.Group value={locale} onChange={handleLanguageChange}>
+                        <Radio.Button value="en">English</Radio.Button>
+                        <Radio.Button value="am">አማርኛ</Radio.Button>
+                      </Radio.Group>
+                    </div>
                   </div>
                 </Card>
               </TabPane>
@@ -148,24 +210,19 @@ const Settings = ({ auth, workers, isOwner, flash }) => {
                 } 
                 key="2"
               >
-                <Card title={t('User Profile')} className="mb-6">
+                <Card title={t('Profile Information')} className="mb-6">
                   <div className="py-4">
-                    <div className="flex flex-col md:flex-row items-start">
-                      <div className="flex-shrink-0 mb-4 md:mb-0 md:mr-6">
-                        <div className="bg-gray-200 rounded-full w-24 h-24 flex items-center justify-center text-gray-500">
-                          <UserOutlined style={{ fontSize: '40px' }} />
-                        </div>
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-bold">{auth.user.name}</h3>
-                        <p className="text-gray-500">{auth.user.email}</p>
-                        <p className="text-gray-500">{auth.user.phone_number}</p>
-                        <p className="mt-2">
-                          <span className="bg-primary-100 text-primary-700 px-2 py-1 rounded text-sm">
-                            {auth.user.is_owner ? t('Owner') : t('Employee')}
-                          </span>
-                        </p>
-                      </div>
+                    <div className="flex flex-col md:flex-row md:items-center mb-4">
+                      <div className="font-medium w-32 mb-2 md:mb-0">{t('Name')}:</div>
+                      <div>{auth.user.name}</div>
+                    </div>
+                    <div className="flex flex-col md:flex-row md:items-center mb-4">
+                      <div className="font-medium w-32 mb-2 md:mb-0">{t('Email')}:</div>
+                      <div>{auth.user.email}</div>
+                    </div>
+                    <div className="flex flex-col md:flex-row md:items-center">
+                      <div className="font-medium w-32 mb-2 md:mb-0">{t('Phone')}:</div>
+                      <div>{auth.user.phone_number || t('Not provided')}</div>
                     </div>
                   </div>
                 </Card>
@@ -176,73 +233,29 @@ const Settings = ({ auth, workers, isOwner, flash }) => {
                   tab={
                     <span className="flex items-center">
                       <TeamOutlined className={tabPosition === 'top' ? 'mr-1' : 'mr-2'} />
-                      <span className={tabPosition === 'top' ? 'hidden sm:inline' : ''}>{t('Workers')}</span>
+                      <span className={tabPosition === 'top' ? 'hidden sm:inline' : ''}>{t('Team')}</span>
                     </span>
                   } 
                   key="3"
                 >
-                  <Card title={t('Manage Workers')} className="mb-6">
-                    <div className="mb-6">
-                      <Divider>{t('Add New Worker')}</Divider>
-                      <Form layout="vertical" className="max-w-md">
-                        <Form.Item 
-                          label={t('Name')} 
-                          validateStatus={errors.name ? 'error' : ''}
-                          help={errors.name}
-                          required
-                        >
-                          <Input 
-                            value={data.name}
-                            onChange={e => setData('name', e.target.value)}
-                            placeholder={t('Enter worker name')}
-                          />
-                        </Form.Item>
-                        
-                        <Form.Item 
-                          label={t('Phone')} 
-                          validateStatus={errors.phone ? 'error' : ''}
-                          help={errors.phone}
-                          required
-                        >
-                          <Input 
-                            value={data.phone}
-                            onChange={e => setData('phone', e.target.value)}
-                            placeholder={t('Enter worker phone number')}
-                          />
-                        </Form.Item>
-                        
-                        <Form.Item 
-                          label={t('Email')} 
-                          validateStatus={errors.email ? 'error' : ''}
-                          help={errors.email}
-                          required
-                        >
-                          <Input 
-                            value={data.email}
-                            onChange={e => setData('email', e.target.value)}
-                            placeholder={t('Enter worker email')}
-                          />
-                        </Form.Item>
-                        
-                        <Form.Item>
-                          <Button 
-                            type="primary" 
-                            onClick={handleAddWorker} 
-                            loading={processing}
-                            icon={<PlusOutlined />}
-                            className="bg-primary-500"
-                          >
-                            {t('Add Worker')}
-                          </Button>
-                        </Form.Item>
-                      </Form>
-                    </div>
-                    
-                    <Divider>{t('Current Workers')}</Divider>
+                  <Card 
+                    title={t('Team Members')} 
+                    className="mb-6"
+                    extra={
+                      <Button
+                        type="primary"
+                        icon={<PlusOutlined />}
+                        onClick={() => setTeamMemberModalVisible(true)}
+                        className="bg-primary-500"
+                      >
+                        {t('Team')}
+                      </Button>
+                    }
+                  >
                     <div className="overflow-x-auto">
                       <Table 
                         dataSource={workers} 
-                        columns={columns} 
+                        columns={teamMembersColumns} 
                         rowKey="id"
                         pagination={false}
                         scroll={{ x: 'max-content' }}
@@ -251,10 +264,123 @@ const Settings = ({ auth, workers, isOwner, flash }) => {
                   </Card>
                 </TabPane>
               )}
+              
+              <TabPane 
+                tab={
+                  <span className="flex items-center">
+                    <AppstoreOutlined className={tabPosition === 'top' ? 'mr-1' : 'mr-2'} />
+                    <span className={tabPosition === 'top' ? 'hidden sm:inline' : ''}>{t('Categories')}</span>
+                  </span>
+                } 
+                key="4"
+              >
+                <Card 
+                  title={t('Manage Categories')} 
+                  className="mb-6"
+                  extra={
+                    <Button
+                      type="primary"
+                      icon={<PlusOutlined />}
+                      onClick={() => setCategoryModalVisible(true)}
+                      className="bg-primary-500"
+                    >
+                      {t('Add Category')}
+                    </Button>
+                  }
+                >
+                  <div className="overflow-x-auto">
+                    <Table 
+                      dataSource={categories} 
+                      columns={categoriesColumns} 
+                      rowKey="id"
+                      pagination={false}
+                      scroll={{ x: 'max-content' }}
+                    />
+                  </div>
+                </Card>
+              </TabPane>
             </Tabs>
           </div>
         </div>
       </div>
+      
+      {/* Add Category Modal */}
+      <Modal
+        title={t('Add New Category')}
+        open={categoryModalVisible}
+        onOk={handleAddCategory}
+        onCancel={() => {
+          setCategoryModalVisible(false);
+          categoryForm.reset();
+        }}
+        confirmLoading={categoryForm.processing}
+      >
+        <Form layout="vertical">
+          <Form.Item
+            label={t('Category Name')}
+            validateStatus={categoryForm.errors.name ? 'error' : ''}
+            help={categoryForm.errors.name}
+            required
+          >
+            <Input 
+              value={categoryForm.data.name}
+              onChange={e => categoryForm.setData('name', e.target.value)}
+              placeholder={t('Enter category name')}
+            />
+          </Form.Item>
+          <Form.Item 
+            label={t('Description')}
+            validateStatus={categoryForm.errors.description ? 'error' : ''}
+            help={categoryForm.errors.description}
+          >
+            <TextArea 
+              value={categoryForm.data.description}
+              onChange={e => categoryForm.setData('description', e.target.value)}
+              placeholder={t('Enter category description (optional)')}
+              rows={4}
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
+      
+      {/* Add Team Member Modal */}
+      <Modal
+        title={t('Add New Team Member')}
+        open={teamMemberModalVisible}
+        onOk={handleAddTeamMember}
+        onCancel={() => {
+          setTeamMemberModalVisible(false);
+          teamMemberForm.reset();
+        }}
+        confirmLoading={teamMemberForm.processing}
+      >
+        <Form layout="vertical">
+          <Form.Item
+            label={t('Name')}
+            validateStatus={teamMemberForm.errors.name ? 'error' : ''}
+            help={teamMemberForm.errors.name}
+            required
+          >
+            <Input 
+              value={teamMemberForm.data.name}
+              onChange={e => teamMemberForm.setData('name', e.target.value)}
+              placeholder={t('Enter team member name')}
+            />
+          </Form.Item>
+          <Form.Item 
+            label={t('Phone Number')}
+            validateStatus={teamMemberForm.errors.phone ? 'error' : ''}
+            help={teamMemberForm.errors.phone}
+            required
+          >
+            <Input 
+              value={teamMemberForm.data.phone}
+              onChange={e => teamMemberForm.setData('phone', e.target.value)}
+              placeholder={t('Enter phone number')}
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
     </AuthenticatedLayout>
   );
 };

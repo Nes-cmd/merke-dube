@@ -27,6 +27,7 @@ class User extends Authenticatable
         'is_admin',
         'has_subscribed',
         'works_for',
+        'is_owner',
     ];
 
     /**

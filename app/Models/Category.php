@@ -12,6 +12,15 @@ class Category extends Model
     // Allow mass assignment for all attributes
     protected $guarded = [];
 
+    protected $fillable = [
+        'name',
+        'description',
+        'icon',
+        'default_price',
+        'minimum_sale_price',
+        'owner_id',
+    ];
+
     /**
      * Get the subcategories for the category.
      */

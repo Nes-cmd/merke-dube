@@ -12,6 +12,19 @@ class Sale extends Model
     // Allow mass assignment for all attributes
     protected $guarded = [];
 
+    protected $fillable = [
+        'item_id',
+        'owner_id',
+        'sale_price',
+        'quantity_sold',
+        'received_price',
+        'credit',
+        'payment_status',
+        'sold_at',
+        'note',
+        'approved_by',
+    ];
+
     protected function casts() : array
     {
         return [

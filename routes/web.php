@@ -46,6 +46,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/settings/workers', [App\Http\Controllers\SettingsController::class, 'addWorker'])->name('settings.add-worker');
     Route::delete('/settings/workers/{id}', [App\Http\Controllers\SettingsController::class, 'removeWorker'])->name('settings.remove-worker');
     Route::post('/settings/language', [App\Http\Controllers\SettingsController::class, 'updateLanguage'])->name('settings.update-language');
+    Route::post('/settings/categories', [App\Http\Controllers\SettingsController::class, 'addCategory'])->name('settings.add-category');
+    Route::delete('/settings/categories/{id}', [App\Http\Controllers\SettingsController::class, 'deleteCategory'])->name('settings.delete-category');
 });
 
 // Language switch route

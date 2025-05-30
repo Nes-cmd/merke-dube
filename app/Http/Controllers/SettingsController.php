@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Http;
 use Exception;
+use App\Models\Category;
 
 class SettingsController extends Controller
 {
@@ -22,9 +23,13 @@ class SettingsController extends Controller
                 ->get();
         }
         
+        // Get categories
+        $categories = Category::where('owner_id', $user->works_for)->get();
+        
         return Inertia::render('Settings', [
             'workers' => $workers,
             'isOwner' => $user->is_owner,
+            'categories' => $categories,
         ]);
     }
     
@@ -33,13 +38,12 @@ class SettingsController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'phone' => 'required|string|max:20',
-            'email' => 'required|email|max:255',
         ]);
         
         $user = auth()->user();
         
         if (!$user->is_owner) {
-            return redirect()->back()->with('error', 'Only owners can add workers');
+            return redirect()->back()->with('error', 'Only owners can add team members');
         }
         
         try {
@@ -52,37 +56,24 @@ class SettingsController extends Controller
             // Generate random password
             $password = rand(100000, 999999);
             
-            // Prepare data for SSO service
-            $data = [
-                'name' => $request->name,
-                'phone' => $request->phone,
-                'email' => $request->email,
-                'authwith' => 'phone',
-                'country_id' => 1,
-                'password' => $password,
-                'password_confirmation' => $password,
-            ];
-            
-            // Call SSO service (this is a placeholder, you would implement your actual SSO integration)
-            // For now, we'll just create the user directly
             if ($existingUser) {
                 // Update existing user
                 $existingUser->works_for = $user->works_for;
                 $existingUser->is_owner = 0;
                 $existingUser->save();
                 
-                return redirect()->back()->with('message', 'Worker added successfully');
+                return redirect()->back()->with('message', 'Team member added successfully');
             } else {
                 // Create new user
                 User::create([
                     'name' => $request->name,
-                    'email' => $request->email,
+                    'email' => $request->phone . '@example.com', // Generate a placeholder email
                     'phone_number' => $request->phone,
                     'works_for' => $user->works_for,
                     'is_owner' => 0,
                 ]);
                 
-                return redirect()->back()->with('message', 'Worker added successfully');
+                return redirect()->back()->with('message', 'Team member added successfully');
             }
         } catch (Exception $e) {
             return redirect()->back()->with('error', $e->getMessage());
@@ -116,5 +107,43 @@ class SettingsController extends Controller
         ]);
         
         return redirect()->back()->with('message', 'Language updated successfully');
+    }
+
+    public function getCategories()
+    {
+        $user = auth()->user();
+        $categories = Category::where('owner_id', $user->works_for)->get();
+        
+        return $categories;
+    }
+
+    public function addCategory(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+        ]);
+        
+        $user = auth()->user();
+        
+        Category::create([
+            'name' => $request->name,
+            'description' => $request->description,
+            'owner_id' => $user->works_for,
+        ]);
+        
+        return redirect()->back()->with('message', 'Category added successfully');
+    }
+
+    public function deleteCategory($id)
+    {
+        $user = auth()->user();
+        $category = Category::where('id', $id)
+            ->where('owner_id', $user->works_for)
+            ->firstOrFail();
+        
+        $category->delete();
+        
+        return redirect()->back()->with('message', 'Category deleted successfully');
     }
 } 
