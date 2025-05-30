@@ -9,18 +9,22 @@ class Store extends Model
 {
     use HasFactory;
 
-    // Allow mass assignment for all attributes
-    protected $guarded = [];
+    protected $fillable = [
+        'name',
+        'location',
+        'owner_id',
+    ];
 
     /**
      * Get the owner that owns the store.
      */
     public function owner()
     {
-        return $this->belongsTo(Owner::class);
+        return $this->belongsTo(User::class, 'owner_id');
     }
 
-    public function items(){
+    public function items()
+    {
         return $this->hasMany(Item::class);
     }
 }

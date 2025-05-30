@@ -35,6 +35,17 @@ Route::middleware('auth')->group(function () {
     Route::get('/sales/create', [App\Http\Controllers\SaleController::class, 'create'])->name('sales.create');
     Route::get('/sales/{id}', [App\Http\Controllers\SaleController::class, 'show'])->name('sales.show');
     Route::post('/sales/{id}/credit-payed', [App\Http\Controllers\SaleController::class, 'creditPayed'])->name('sales.credit-payed');
+    
+    // Warehouse routes
+    Route::get('/warehouses', [App\Http\Controllers\WarehouseController::class, 'index'])->name('warehouses.index');
+    Route::post('/warehouses', [App\Http\Controllers\WarehouseController::class, 'store'])->name('warehouses.store');
+    Route::delete('/warehouses/{id}', [App\Http\Controllers\WarehouseController::class, 'destroy'])->name('warehouses.destroy');
+    
+    // Settings routes
+    Route::get('/settings', [App\Http\Controllers\SettingsController::class, 'index'])->name('settings.index');
+    Route::post('/settings/workers', [App\Http\Controllers\SettingsController::class, 'addWorker'])->name('settings.add-worker');
+    Route::delete('/settings/workers/{id}', [App\Http\Controllers\SettingsController::class, 'removeWorker'])->name('settings.remove-worker');
+    Route::post('/settings/language', [App\Http\Controllers\SettingsController::class, 'updateLanguage'])->name('settings.update-language');
 });
 
 // Language switch route
