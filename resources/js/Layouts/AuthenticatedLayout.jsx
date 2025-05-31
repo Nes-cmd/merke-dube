@@ -91,19 +91,19 @@ export default function AuthenticatedLayout({ user, header, children }) {
             </Link>
             
             {/* Desktop Navigation */}
-            <nav className="hidden lg:flex space-x-6">
+            <nav className="hidden lg:flex space-x-1">
               {mainNavItems.map((item) => (
                 <Link
                   key={item.name}
                   href={item.path}
-                  className={`flex items-center px-3 py-2 rounded-md transition-colors ${
+                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors duration-150 flex items-center ${
                     isActive(item.path)
-                      ? 'bg-primary-100 text-primary-600 font-semibold'
-                      : 'text-gray-600 hover:bg-gray-100'
+                      ? 'bg-primary-100 text-primary-700 font-semibold'
+                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                   }`}
                 >
-                  <span className="mr-2">{item.icon}</span>
-                  <span>{item.name}</span>
+                  <span className="mr-1.5">{item.icon}</span>
+                  {item.name}
                 </Link>
               ))}
             </nav>

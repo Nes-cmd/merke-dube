@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Head, useForm } from '@inertiajs/react';
-import { Card, Button, Tabs, Form, Input, Table, Popconfirm, message, Radio, Divider, Modal } from 'antd';
+import { Card, Button, Tabs, Form, Input, Table, Popconfirm, message, Radio, Divider, Modal, Alert, Tag } from 'antd';
 import { 
   PlusOutlined, 
   DeleteOutlined, 
@@ -8,10 +8,13 @@ import {
   UserOutlined, 
   TeamOutlined,
   AppstoreOutlined,
-  ShopOutlined
+  ShopOutlined,
+  MailOutlined,
+  PhoneOutlined
 } from '@ant-design/icons';
 import { useTranslation } from '@/Contexts/I18nContext';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import axios from 'axios';
 
 const { TabPane } = Tabs;
 const { TextArea } = Input;
@@ -23,11 +26,6 @@ const Settings = ({ auth, workers, isOwner, categories, shops, flash }) => {
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
   const [teamMemberModalVisible, setTeamMemberModalVisible] = useState(false);
   const [shopModalVisible, setShopModalVisible] = useState(false);
-  
-  const teamMemberForm = useForm({
-    name: '',
-    phone: '',
-  });
   
   const categoryForm = useForm({
     name: '',
@@ -42,6 +40,16 @@ const Settings = ({ auth, workers, isOwner, categories, shops, flash }) => {
   });
   
   const { delete: destroy } = useForm();
+  
+  const teamMemberForm = useForm({
+    name: '',
+    phone: '',
+    email: '',
+    role: 'seller',
+  });
+  
+  const [addingTeamMember, setAddingTeamMember] = useState(false);
+  const [teamAddError, setTeamAddError] = useState(null);
   
   // Add window resize listener
   useEffect(() => {
@@ -60,17 +68,33 @@ const Settings = ({ auth, workers, isOwner, categories, shops, flash }) => {
     if (flash.error) {
       message.error(flash.error);
     }
+    if (flash.password_info) {
+      // Display password info in a modal or notification that will stand out
+      Modal.info({
+        title: t('Temporary Password'),
+        content: (
+          <div>
+            <p>{flash.password_info}</p>
+            <p className="text-red-500 font-semibold mt-2">
+              {t('Please save this password as it will not be shown again.')}
+            </p>
+          </div>
+        ),
+      });
+    }
   }, [flash]);
 
   const handleAddTeamMember = () => {
+    console.log('Submitting form with data:', teamMemberForm.data);
     teamMemberForm.post(route('settings.add-worker'), {
       onSuccess: () => {
-        setTeamMemberModalVisible(false);
+        setAddingTeamMember(false);
         teamMemberForm.reset();
-        message.success(t('Team member added successfully'));
+        // Force page reload to show updated team members
+        window.location.reload();
       },
       onError: (errors) => {
-        console.error(errors);
+        console.error('Error adding team member:', errors);
       }
     });
   };
@@ -148,6 +172,19 @@ const Settings = ({ auth, workers, isOwner, categories, shops, flash }) => {
       title: t('Phone'),
       dataIndex: 'phone_number',
       key: 'phone_number',
+    },
+    {
+      title: t('Role'),
+      key: 'role',
+      render: (text, record) => {
+        if (record.is_owner) {
+          return <Tag color="gold">{t('Owner')}</Tag>;
+        } else if (record.is_admin) {
+          return <Tag color="blue">{t('Admin')}</Tag>;
+        } else {
+          return <Tag color="green">{t('Seller')}</Tag>;
+        }
+      }
     },
     {
       title: t('Actions'),
@@ -320,14 +357,16 @@ const Settings = ({ auth, workers, isOwner, categories, shops, flash }) => {
                     title={t('Team Members')} 
                     className="mb-6"
                     extra={
-                      <Button
-                        type="primary"
-                        icon={<PlusOutlined />}
-                        onClick={() => setTeamMemberModalVisible(true)}
-                        className="bg-primary-500"
-                      >
-                        {t('Team')}
-                      </Button>
+                      auth.user.is_owner ? (
+                        <Button
+                          type="primary"
+                          icon={<PlusOutlined />}
+                          onClick={() => setAddingTeamMember(true)}
+                          className="bg-primary-500"
+                        >
+                          {t('Add Team Member')}
+                        </Button>
+                      ) : null
                     }
                   >
                     <div className="overflow-x-auto">
@@ -459,15 +498,39 @@ const Settings = ({ auth, workers, isOwner, categories, shops, flash }) => {
       
       {/* Add Team Member Modal */}
       <Modal
-        title={t('Add New Team Member')}
-        open={teamMemberModalVisible}
-        onOk={handleAddTeamMember}
+        title={t('Add Team Member')}
+        open={addingTeamMember}
         onCancel={() => {
-          setTeamMemberModalVisible(false);
+          setAddingTeamMember(false);
           teamMemberForm.reset();
         }}
-        confirmLoading={teamMemberForm.processing}
+        footer={[
+          <Button key="cancel" onClick={() => {
+            setAddingTeamMember(false);
+            teamMemberForm.reset();
+          }}>
+            {t('Cancel')}
+          </Button>,
+          <Button 
+            key="submit" 
+            type="primary" 
+            onClick={handleAddTeamMember}
+            loading={teamMemberForm.processing}
+          >
+            {t('Add')}
+          </Button>
+        ]}
       >
+        {teamMemberForm.errors.phone && (
+          <Alert
+            message={t('Error')}
+            description={teamMemberForm.errors.phone}
+            type="error"
+            showIcon
+            className="mb-4"
+          />
+        )}
+        
         <Form layout="vertical">
           <Form.Item
             label={t('Name')}
@@ -478,10 +541,12 @@ const Settings = ({ auth, workers, isOwner, categories, shops, flash }) => {
             <Input 
               value={teamMemberForm.data.name}
               onChange={e => teamMemberForm.setData('name', e.target.value)}
-              placeholder={t('Enter team member name')}
+              placeholder={t('Enter name')}
+              prefix={<UserOutlined />}
             />
           </Form.Item>
-          <Form.Item 
+          
+          <Form.Item
             label={t('Phone Number')}
             validateStatus={teamMemberForm.errors.phone ? 'error' : ''}
             help={teamMemberForm.errors.phone}
@@ -490,8 +555,29 @@ const Settings = ({ auth, workers, isOwner, categories, shops, flash }) => {
             <Input 
               value={teamMemberForm.data.phone}
               onChange={e => teamMemberForm.setData('phone', e.target.value)}
-              placeholder={t('Enter phone number')}
+              placeholder={t('Enter phone number (e.g. +251912345678 or 0912345678)')}
+              prefix={<PhoneOutlined />}
             />
+          </Form.Item>
+          
+          
+          
+          <Form.Item
+            label={t('Role')}
+            validateStatus={teamMemberForm.errors.role ? 'error' : ''}
+            help={teamMemberForm.errors.role}
+            required
+          >
+            <Radio.Group 
+              value={teamMemberForm.data.role || 'seller'}
+              onChange={e => teamMemberForm.setData('role', e.target.value)}
+            >
+              <Radio value="seller">{t('Seller')}</Radio>
+              <Radio value="admin">{t('Admin')}</Radio>
+            </Radio.Group>
+            <div className="text-gray-500 text-xs mt-1">
+              {t('Sellers can only make sales. Admins can manage products and view reports.')}
+            </div>
           </Form.Item>
         </Form>
       </Modal>

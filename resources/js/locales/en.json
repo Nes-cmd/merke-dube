@@ -43,5 +43,10 @@
         "Items that need restocking soon": "Items that need restocking soon",
         "Orders Progress": "Orders Progress",
         "Manage your inventory with ease": "Manage your inventory with ease"
-    }
+    },
+    "Role": "Role",
+    "Seller": "Seller",
+    "Admin": "Admin",
+    "Owner": "Owner",
+    "Sellers can only make sales. Admins can manage products and view reports.": "Sellers can only make sales. Admins can manage products and view reports."
 }

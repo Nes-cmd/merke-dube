@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\SaleController;
+use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\UserController;
 
 Route::get('/', function () {
    
@@ -59,7 +61,7 @@ Route::middleware('auth')->group(function () {
     
     // Settings routes
     Route::get('/settings', [App\Http\Controllers\SettingsController::class, 'index'])->name('settings.index');
-    Route::post('/settings/workers', [App\Http\Controllers\SettingsController::class, 'addWorker'])->name('settings.add-worker');
+    Route::post('/settings/workers', [App\Http\Controllers\UserController::class, 'addWorker'])->name('settings.add-worker');
     Route::delete('/settings/workers/{id}', [App\Http\Controllers\SettingsController::class, 'removeWorker'])->name('settings.remove-worker');
     Route::post('/settings/language', [App\Http\Controllers\SettingsController::class, 'updateLanguage'])->name('settings.update-language');
     Route::post('/settings/categories', [App\Http\Controllers\SettingsController::class, 'addCategory'])->name('settings.add-category');

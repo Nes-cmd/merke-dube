@@ -40,47 +40,48 @@ class SettingsController extends Controller
     
     public function addWorker(Request $request)
     {
+        // Add this line for debugging
+        \Log::info('Add worker request:', $request->all());
+
+        if (!auth()->user()->is_owner) {
+            return redirect()->back()->with('error', 'Only owners can add team members');
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
             'phone' => 'required|string|max:20',
         ]);
-        
-        $user = auth()->user();
-        
-        if (!$user->is_owner) {
-            return redirect()->back()->with('error', 'Only owners can add team members');
-        }
-        
+
         try {
+            $phone = $this->trimPhone($request->phone);
+            
+            // Add this line for debugging
+            \Log::info('Formatted phone:', ['original' => $request->phone, 'formatted' => $phone]);
+            
             // Check if user already exists
-            $existingUser = User::where('phone_number', $request->phone)->first();
-            if ($existingUser && $existingUser->works_for != null) {
-                return redirect()->back()->with('error', 'User with this phone is already registered');
+            $existingUser = User::where('phone_number', $phone)->first();
+            if ($existingUser && $existingUser->works_for !== null) {
+                return redirect()->back()->with('error', 'User with this phone is registered before, please use another phone number');
             }
-            
-            // Generate random password
-            $password = rand(100000, 999999);
-            
+
+            // If user exists but not working for anyone, update them
             if ($existingUser) {
-                // Update existing user
-                $existingUser->works_for = $user->works_for;
-                $existingUser->is_owner = 0;
+                $existingUser->works_for = auth()->user()->works_for;
                 $existingUser->save();
-                
-                return redirect()->back()->with('message', 'Team member added successfully');
-            } else {
-                // Create new user
-                User::create([
-                    'name' => $request->name,
-                    'email' => $request->phone . '@example.com', // Generate a placeholder email
-                    'phone_number' => $request->phone,
-                    'works_for' => $user->works_for,
-                    'is_owner' => 0,
-                ]);
-                
                 return redirect()->back()->with('message', 'Team member added successfully');
             }
-        } catch (Exception $e) {
+            
+            // Create new user
+            $user = User::create([
+                'name' => $request->name,
+                'email' => $request->email ?? $phone.'@example.com',
+                'phone_number' => $phone,
+                'works_for' => auth()->user()->works_for,
+                'is_owner' => 0,
+            ]);
+
+            return redirect()->back()->with('message', 'Team member added successfully');
+        } catch (\Exception $e) {
             return redirect()->back()->with('error', $e->getMessage());
         }
     }
@@ -190,5 +191,18 @@ class SettingsController extends Controller
         $shop->delete();
         
         return redirect()->back()->with('message', 'Shop deleted successfully');
+    }
+
+    private function trimPhone($phone)
+    {
+        // Remove spaces and format the phone number
+        $phone = preg_replace('/\s+/', '', $phone);
+        
+        // If phone starts with 0, replace with +251
+        if (substr($phone, 0, 1) === '0') {
+            $phone = '+251' . substr($phone, 1);
+        }
+        
+        return $phone;
     }
 } 
