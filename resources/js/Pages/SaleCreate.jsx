@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import { Head, useForm } from '@inertiajs/react';
-import { Form, Input, Button, Card, InputNumber, Select, DatePicker, message } from 'antd';
+import { Form, Input, Button, Card, InputNumber, Select, DatePicker, message, Modal } from 'antd';
 import { useTranslation } from '@/Contexts/I18nContext';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import { PlusOutlined, UserOutlined, PhoneOutlined } from '@ant-design/icons';
 
 const { Option } = Select;
 
-const SaleCreate = ({ auth, products }) => {
+const SaleCreate = ({ auth, products, customers }) => {
   const { t } = useTranslation();
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [quickCustomerModalVisible, setQuickCustomerModalVisible] = useState(false);
   
   const { data, setData, post, processing, errors } = useForm({
     item_id: '',
@@ -20,6 +22,7 @@ const SaleCreate = ({ auth, products }) => {
     customer_name: '',
     customer_phone: '',
     note: '',
+    customer_id: '',
   });
 
   const handleProductChange = (productId) => {
@@ -72,6 +75,10 @@ const SaleCreate = ({ auth, products }) => {
         window.location.href = route('sales.index');
       }
     });
+  };
+
+  const handleAddCustomer = () => {
+    // Implementation of adding a new customer
   };
 
   return (
@@ -165,6 +172,30 @@ const SaleCreate = ({ auth, products }) => {
                 </Form.Item>
                 
                 <Form.Item 
+                  label={t('Customer')}
+                  validateStatus={errors.customer_id ? 'error' : ''}
+                  help={errors.customer_id}
+                >
+                  <Select
+                    showSearch
+                    placeholder={t('Select a customer')}
+                    optionFilterProp="children"
+                    value={data.customer_id}
+                    onChange={value => setData('customer_id', value)}
+                    filterOption={(input, option) =>
+                      option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    }
+                    allowClear
+                  >
+                    {customers.map(customer => (
+                      <Select.Option key={customer.id} value={customer.id}>
+                        {customer.name} {customer.phone ? `- ${customer.phone}` : ''}
+                      </Select.Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+                
+                <Form.Item 
                   label={t('Customer Name')}
                   validateStatus={errors.customer_name ? 'error' : ''}
                   help={errors.customer_name}
@@ -203,6 +234,16 @@ const SaleCreate = ({ auth, products }) => {
                 
                 <Form.Item>
                   <Button 
+                    type="dashed" 
+                    icon={<PlusOutlined />} 
+                    onClick={() => setQuickCustomerModalVisible(true)}
+                  >
+                    {t('Add New Customer')}
+                  </Button>
+                </Form.Item>
+                
+                <Form.Item>
+                  <Button 
                     type="primary" 
                     htmlType="submit" 
                     loading={processing}
@@ -216,6 +257,43 @@ const SaleCreate = ({ auth, products }) => {
           </div>
         </div>
       </div>
+
+      <Modal
+        title={t('Add New Customer')}
+        open={quickCustomerModalVisible}
+        onOk={handleAddCustomer}
+        onCancel={() => setQuickCustomerModalVisible(false)}
+        confirmLoading={customerForm.processing}
+      >
+        <Form layout="vertical">
+          <Form.Item
+            label={t('Name')}
+            validateStatus={customerForm.errors.name ? 'error' : ''}
+            help={customerForm.errors.name}
+            required
+          >
+            <Input 
+              prefix={<UserOutlined />}
+              value={customerForm.data.name}
+              onChange={e => customerForm.setData('name', e.target.value)}
+              placeholder={t('Enter customer name')}
+            />
+          </Form.Item>
+          
+          <Form.Item 
+            label={t('Phone Number')}
+            validateStatus={customerForm.errors.phone ? 'error' : ''}
+            help={customerForm.errors.phone}
+          >
+            <Input 
+              prefix={<PhoneOutlined />}
+              value={customerForm.data.phone}
+              onChange={e => customerForm.setData('phone', e.target.value)}
+              placeholder={t('Enter phone number')}
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
     </AuthenticatedLayout>
   );
 };

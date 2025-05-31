@@ -29,6 +29,8 @@ class CreateSalesTable extends Migration
             $table->foreignId('approved_by')->nullable()->constrained('users')->cascadeOnDelete();
             $table->foreign('item_id')->references('id')->on('items')->onDelete('cascade');
             $table->foreign('owner_id')->references('id')->on('owners')->onDelete('cascade');
+
+            $table->foreignId('customer_id')->nullable()->constrained('customers');
         });
     }
 

@@ -17,8 +17,7 @@ class Item extends Model
         'color',
         'size',
         'photo',
-        'paid',
-        'credit',
+        'status',
         'unit_price',
         'quantity',
         'remark',
@@ -27,18 +26,25 @@ class Item extends Model
         'subcategory_id',
         'store_id',
         'owner_id',
-        'status',
+        'supplier_id',
+        'sku',
+        'batch_number',
+        'code',
+        'manufacture_date',
+        'expiry_date',
+        'refill_count',
+        'last_refill_date',
     ];
 
-    protected function casts() : array
-    {
-        return [
-            'status' => \App\Enums\PaymentStatus::class,
-        ];
-    }
+    protected $casts = [
+        'status' => \App\Enums\PaymentStatus::class,
+        'manufacture_date' => 'date',
+        'expiry_date' => 'date',
+        'last_refill_date' => 'datetime',
+    ];
 
     /**
-     * Get the category that the item belongs to.
+     * Get the category that owns the item.
      */
     public function category()
     {
@@ -46,7 +52,7 @@ class Item extends Model
     }
 
     /**
-     * Get the subcategory that the item belongs to.
+     * Get the subcategory that owns the item.
      */
     public function subcategory()
     {
@@ -54,7 +60,7 @@ class Item extends Model
     }
 
     /**
-     * Get the store where the item is available.
+     * Get the store that owns the item.
      */
     public function store()
     {
@@ -62,14 +68,85 @@ class Item extends Model
     }
 
     /**
-     * Get the owner who owns the item.
+     * Get the owner that owns the item.
      */
     public function owner()
     {
         return $this->belongsTo(Owner::class);
     }
 
-    public function approvedBy(){
+    /**
+     * Get the user who approved this item.
+     */
+    public function approvedBy()
+    {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    /**
+     * Get the supplier for this item.
+     */
+    public function supplier()
+    {
+        return $this->belongsTo(Customer::class, 'supplier_id');
+    }
+
+    /**
+     * Get sales for this item.
+     */
+    public function sales()
+    {
+        return $this->hasMany(Sale::class);
+    }
+
+    /**
+     * Get all images for this item.
+     */
+    public function images()
+    {
+        return $this->hasMany(ItemImage::class)->orderBy('sort_order');
+    }
+
+    /**
+     * Get the primary image for this item.
+     */
+    public function primaryImage()
+    {
+        return $this->hasOne(ItemImage::class)->where('is_primary', true);
+    }
+
+    /**
+     * Check if the item is expired or about to expire.
+     * 
+     * @param int $warningDays Days before expiry to show warning
+     * @return string|null 'expired', 'expiring_soon', or null if not applicable
+     */
+    public function expiryStatus($warningDays = 30)
+    {
+        if (!$this->expiry_date) {
+            return null;
+        }
+        
+        $today = now()->startOfDay();
+        $expiryDate = $this->expiry_date->startOfDay();
+        
+        if ($expiryDate->isPast()) {
+            return 'expired';
+        }
+        
+        $daysUntilExpiry = $today->diffInDays($expiryDate);
+        if ($daysUntilExpiry <= $warningDays) {
+            return 'expiring_soon';
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Get refill history for this item.
+     */
+    public function refills()
+    {
+        return $this->hasMany(ItemRefill::class)->orderBy('created_at', 'desc');
     }
 }

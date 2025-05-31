@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Owner;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,7 +14,7 @@ class AuthController extends Controller
 {
     public function redirect()
     {
-       
+
         $query = http_build_query(
             array(
                 'client_id' => env('SISO_CLIENT_ID'),
@@ -60,7 +61,17 @@ class AuthController extends Controller
                         'email' => $response['email'],
                         'phone' => $response['phone'],
                     ]);
-                    // $user->assignRole(RoleEnum::TENANT->name);
+
+                    // Self owner
+                    $owner = Owner::create([
+                        'admin_id' => $user->id,
+                        'name' => "{$user->name}'s Store",
+                        'phone_number' => $user->phone,
+                        'profile' => $response['profile']??null,
+                    ]);
+                    $user->works_for = $owner->id;
+                    $user->is_owner = true;
+                    $user->save();
                 }
 
                 Auth::login($user); // login user

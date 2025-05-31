@@ -8,6 +8,7 @@ use Inertia\Inertia;
 use Illuminate\Support\Facades\Http;
 use Exception;
 use App\Models\Category;
+use App\Models\Shop;
 
 class SettingsController extends Controller
 {
@@ -26,10 +27,14 @@ class SettingsController extends Controller
         // Get categories
         $categories = Category::where('owner_id', $user->works_for)->get();
         
+        // Get shops
+        $shops = Shop::where('owner_id', $user->works_for)->get();
+        
         return Inertia::render('Settings', [
             'workers' => $workers,
             'isOwner' => $user->is_owner,
             'categories' => $categories,
+            'shops' => $shops,
         ]);
     }
     
@@ -145,5 +150,45 @@ class SettingsController extends Controller
         $category->delete();
         
         return redirect()->back()->with('message', 'Category deleted successfully');
+    }
+
+    public function addShop(Request $request)
+    {
+        $user = auth()->user();
+        
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'location' => 'nullable|string|max:255',
+            'phone' => 'nullable|string|max:20',
+            'description' => 'nullable|string',
+        ]);
+        
+        Shop::create([
+            'name' => $request->name,
+            'location' => $request->location,
+            'phone' => $request->phone,
+            'description' => $request->description,
+            'owner_id' => $user->works_for,
+            'is_active' => true,
+        ]);
+        
+        return redirect()->back()->with('message', 'Shop added successfully');
+    }
+
+    public function deleteShop($id)
+    {
+        $user = auth()->user();
+        $shop = Shop::where('id', $id)
+            ->where('owner_id', $user->works_for)
+            ->firstOrFail();
+        
+        // Check if shop has sales
+        if ($shop->sales()->count() > 0) {
+            return redirect()->back()->with('error', 'Cannot delete shop with sales history');
+        }
+        
+        $shop->delete();
+        
+        return redirect()->back()->with('message', 'Shop deleted successfully');
     }
 } 

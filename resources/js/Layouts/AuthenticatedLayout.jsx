@@ -38,9 +38,10 @@ export default function AuthenticatedLayout({ user, header, children }) {
     { name: t('Dashboard'), path: route('dashboard'), icon: <DashboardOutlined /> },
     { name: t('Products'), path: '/products', icon: <BarcodeOutlined /> },
     { name: t('Sales'), path: '/sales', icon: <FileDoneOutlined /> },
-    { name: t('Customers'), path: '/customers', icon: <TeamOutlined /> },
-    { name: t('Settings'), path: route('settings.index'), icon: <SettingOutlined /> },
     { name: t('Warehouses'), path: route('warehouses.index'), icon: <HomeOutlined /> },
+    { name: t('Customers'), path: '/customers', icon: <TeamOutlined /> },
+    { name: t('Inventory'), path: '/inventory', icon: <ShopOutlined /> },
+    { name: t('Settings'), path: route('settings.index'), icon: <SettingOutlined /> },
   ];
 
   const userMenu = (

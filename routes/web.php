@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', function () {
+   
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
         'canRegister' => Route::has('register'),
@@ -27,8 +28,19 @@ Route::middleware('auth')->group(function () {
     // Products routes
     Route::get('/products', [App\Http\Controllers\ProductController::class, 'index'])->name('products.index');
     Route::get('/products/create', [App\Http\Controllers\ProductController::class, 'create'])->name('products.create');
+    Route::post('/products/store', [App\Http\Controllers\ProductController::class, 'store'])
+        ->name('products.store')
+        ->middleware('web');
     Route::get('/products/{id}', [App\Http\Controllers\ProductController::class, 'show'])->name('products.show');
     Route::post('/products/{id}/credit-payed', [App\Http\Controllers\ProductController::class, 'creditPayed'])->name('products.credit-payed');
+    Route::get('/products/{id}/refill', [App\Http\Controllers\ProductController::class, 'refill'])->name('products.refill');
+    Route::post('/products/{id}/refill', [App\Http\Controllers\ProductController::class, 'storeRefill'])->name('products.store-refill');
+    Route::post('/products/{id}/images', [App\Http\Controllers\ProductController::class, 'uploadImages'])->name('products.upload-images');
+    Route::delete('/products/{id}/images/{imageId}', [App\Http\Controllers\ProductController::class, 'deleteImage'])->name('products.delete-image');
+    Route::post('/products/{id}/images/order', [App\Http\Controllers\ProductController::class, 'updateImageOrder'])->name('products.update-image-order');
+    Route::post('/products/{id}/images/{imageId}/primary', [App\Http\Controllers\ProductController::class, 'setPrimaryImage'])->name('products.set-primary-image');
+    Route::get('/products/{id}/edit', [App\Http\Controllers\ProductController::class, 'edit'])->name('products.edit');
+    Route::put('/products/{id}', [App\Http\Controllers\ProductController::class, 'update'])->name('products.update');
     
     // Sales routes
     Route::get('/sales', [App\Http\Controllers\SaleController::class, 'index'])->name('sales.index');
@@ -48,6 +60,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/settings/language', [App\Http\Controllers\SettingsController::class, 'updateLanguage'])->name('settings.update-language');
     Route::post('/settings/categories', [App\Http\Controllers\SettingsController::class, 'addCategory'])->name('settings.add-category');
     Route::delete('/settings/categories/{id}', [App\Http\Controllers\SettingsController::class, 'deleteCategory'])->name('settings.delete-category');
+    Route::post('/settings/shops', [App\Http\Controllers\SettingsController::class, 'addShop'])->name('settings.add-shop');
+    Route::delete('/settings/shops/{id}', [App\Http\Controllers\SettingsController::class, 'deleteShop'])->name('settings.delete-shop');
 });
 
 // Language switch route
@@ -58,5 +72,27 @@ Route::get('/language/{locale}', [App\Http\Controllers\LanguageController::class
 Route::get('/auth/callback', [AuthController::class, 'callback']);
 Route::middleware('guest')->get('auth/login', [AuthController::class, 'redirect'])->name('login');
 Route::middleware('auth')->post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+// Shop routes
+Route::get('/shops', [App\Http\Controllers\ShopController::class, 'index'])->name('shops.index');
+Route::get('/shops/{id}', [App\Http\Controllers\ShopController::class, 'show'])->name('shops.show');
+Route::post('/shops', [App\Http\Controllers\ShopController::class, 'store'])->name('shops.store');
+Route::delete('/shops/{id}', [App\Http\Controllers\ShopController::class, 'destroy'])->name('shops.destroy');
+Route::post('/shops/{id}/inventory', [App\Http\Controllers\ShopController::class, 'addInventory'])->name('shops.inventory.add');
+Route::delete('/shops/{shopId}/inventory/{inventoryId}', [App\Http\Controllers\ShopController::class, 'removeInventory'])->name('shops.inventory.remove');
+
+// Customer routes
+Route::get('/customers', [App\Http\Controllers\CustomerController::class, 'index'])->name('customers.index');
+Route::get('/customers/{id}', [App\Http\Controllers\CustomerController::class, 'show'])->name('customers.show');
+Route::post('/customers', [App\Http\Controllers\CustomerController::class, 'store'])->name('customers.store');
+Route::put('/customers/{id}', [App\Http\Controllers\CustomerController::class, 'update'])->name('customers.update');
+Route::delete('/customers/{id}', [App\Http\Controllers\CustomerController::class, 'destroy'])->name('customers.destroy');
+
+// Inventory routes
+Route::get('/inventory', [App\Http\Controllers\InventoryController::class, 'index'])->name('inventory.index');
+Route::get('/inventory/create', [App\Http\Controllers\InventoryController::class, 'create'])->name('inventory.create');
+Route::post('/inventory', [App\Http\Controllers\InventoryController::class, 'store'])->name('inventory.store');
+Route::put('/inventory/{id}', [App\Http\Controllers\InventoryController::class, 'update'])->name('inventory.update');
+Route::delete('/inventory/{id}', [App\Http\Controllers\InventoryController::class, 'destroy'])->name('inventory.destroy');
 
 

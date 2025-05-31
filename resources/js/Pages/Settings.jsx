@@ -7,7 +7,8 @@ import {
   GlobalOutlined, 
   UserOutlined, 
   TeamOutlined,
-  AppstoreOutlined
+  AppstoreOutlined,
+  ShopOutlined
 } from '@ant-design/icons';
 import { useTranslation } from '@/Contexts/I18nContext';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
@@ -15,12 +16,13 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 const { TabPane } = Tabs;
 const { TextArea } = Input;
 
-const Settings = ({ auth, workers, isOwner, categories, flash }) => {
+const Settings = ({ auth, workers, isOwner, categories, shops, flash }) => {
   const { t, locale, setLocale } = useTranslation();
   const [activeTab, setActiveTab] = useState('1');
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
   const [teamMemberModalVisible, setTeamMemberModalVisible] = useState(false);
+  const [shopModalVisible, setShopModalVisible] = useState(false);
   
   const teamMemberForm = useForm({
     name: '',
@@ -29,6 +31,13 @@ const Settings = ({ auth, workers, isOwner, categories, flash }) => {
   
   const categoryForm = useForm({
     name: '',
+    description: '',
+  });
+  
+  const shopForm = useForm({
+    name: '',
+    location: '',
+    phone: '',
     description: '',
   });
   
@@ -105,6 +114,30 @@ const Settings = ({ auth, workers, isOwner, categories, flash }) => {
     setLocale(newLocale);
   };
 
+  const handleAddShop = () => {
+    shopForm.post(route('shops.store'), {
+      onSuccess: () => {
+        setShopModalVisible(false);
+        shopForm.reset();
+        message.success(t('Shop added successfully'));
+      },
+      onError: (errors) => {
+        console.error(errors);
+      }
+    });
+  };
+
+  const handleDeleteShop = (id) => {
+    destroy(route('settings.delete-shop', id), {
+      onSuccess: () => {
+        message.success(t('Shop deleted successfully'));
+      },
+      onError: () => {
+        message.error(t('Failed to delete shop'));
+      }
+    });
+  };
+
   const teamMembersColumns = [
     {
       title: t('Name'),
@@ -155,6 +188,51 @@ const Settings = ({ auth, workers, isOwner, categories, flash }) => {
           cancelText={t('No')}
         >
           <Button danger icon={<DeleteOutlined />} />
+        </Popconfirm>
+      ),
+    },
+  ];
+
+  // Define columns for the shops table
+  const shopsColumns = [
+    {
+      title: t('Name'),
+      dataIndex: 'name',
+      key: 'name',
+      render: (text, record) => (
+        <a href={route('shops.show', record.id)}>{text}</a>
+      ),
+    },
+    {
+      title: t('Location'),
+      dataIndex: 'location',
+      key: 'location',
+      responsive: ['md'],
+    },
+    {
+      title: t('Phone'),
+      dataIndex: 'phone',
+      key: 'phone',
+      responsive: ['lg'],
+    },
+    {
+      title: t('Actions'),
+      key: 'actions',
+      render: (_, record) => (
+        <Popconfirm
+          title={t('Are you sure you want to delete this shop?')}
+          onConfirm={() => handleDeleteShop(record.id)}
+          okText={t('Yes')}
+          cancelText={t('No')}
+          okButtonProps={{ danger: true }}
+        >
+          <Button 
+            danger
+            icon={<DeleteOutlined />}
+            size="small"
+          >
+            {t('Delete')}
+          </Button>
         </Popconfirm>
       ),
     },
@@ -299,6 +377,42 @@ const Settings = ({ auth, workers, isOwner, categories, flash }) => {
                   </div>
                 </Card>
               </TabPane>
+              
+              {/* Shops Tab */}
+              <TabPane 
+                tab={
+                  <span className="tab-label">
+                    <ShopOutlined />
+                    {windowWidth >= 768 && <span className="ml-2">{t('Shops')}</span>}
+                  </span>
+                }
+                key="5"
+              >
+                <Card 
+                  title={t('Shops')} 
+                  className="mb-6"
+                  extra={
+                    <Button 
+                      type="primary" 
+                      icon={<PlusOutlined />} 
+                      onClick={() => setShopModalVisible(true)}
+                      className="bg-primary-500"
+                    >
+                      {t('Shop')}
+                    </Button>
+                  }
+                >
+                  <div className="overflow-x-auto">
+                    <Table 
+                      dataSource={shops} 
+                      columns={shopsColumns} 
+                      rowKey="id"
+                      pagination={false}
+                      scroll={{ x: 'max-content' }}
+                    />
+                  </div>
+                </Card>
+              </TabPane>
             </Tabs>
           </div>
         </div>
@@ -377,6 +491,67 @@ const Settings = ({ auth, workers, isOwner, categories, flash }) => {
               value={teamMemberForm.data.phone}
               onChange={e => teamMemberForm.setData('phone', e.target.value)}
               placeholder={t('Enter phone number')}
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
+      
+      {/* Add Shop Modal */}
+      <Modal
+        title={t('Add New Shop')}
+        open={shopModalVisible}
+        onOk={handleAddShop}
+        onCancel={() => {
+          setShopModalVisible(false);
+          shopForm.reset();
+        }}
+        confirmLoading={shopForm.processing}
+      >
+        <Form layout="vertical">
+          <Form.Item
+            label={t('Shop Name')}
+            validateStatus={shopForm.errors.name ? 'error' : ''}
+            help={shopForm.errors.name}
+            required
+          >
+            <Input 
+              value={shopForm.data.name}
+              onChange={e => shopForm.setData('name', e.target.value)}
+              placeholder={t('Enter shop name')}
+            />
+          </Form.Item>
+          <Form.Item 
+            label={t('Location')}
+            validateStatus={shopForm.errors.location ? 'error' : ''}
+            help={shopForm.errors.location}
+          >
+            <Input 
+              value={shopForm.data.location}
+              onChange={e => shopForm.setData('location', e.target.value)}
+              placeholder={t('Enter shop location')}
+            />
+          </Form.Item>
+          <Form.Item 
+            label={t('Phone')}
+            validateStatus={shopForm.errors.phone ? 'error' : ''}
+            help={shopForm.errors.phone}
+          >
+            <Input 
+              value={shopForm.data.phone}
+              onChange={e => shopForm.setData('phone', e.target.value)}
+              placeholder={t('Enter shop phone')}
+            />
+          </Form.Item>
+          <Form.Item 
+            label={t('Description')}
+            validateStatus={shopForm.errors.description ? 'error' : ''}
+            help={shopForm.errors.description}
+          >
+            <TextArea 
+              value={shopForm.data.description}
+              onChange={e => shopForm.setData('description', e.target.value)}
+              placeholder={t('Enter shop description (optional)')}
+              rows={4}
             />
           </Form.Item>
         </Form>

@@ -10,6 +10,8 @@ use App\Enums\PaymentStatus;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Customer;
+use App\Models\Shop;
+use App\Models\ShopInventory;
 
 class SaleController extends Controller
 {
@@ -43,12 +45,18 @@ class SaleController extends Controller
     public function create()
     {
         $user = auth()->user();
-        $products = Item::where('owner_id', $user->works_for)
-            ->where('quantity', '>', 0)
+        
+        // Get the user's shops
+        $shops = Shop::where('owner_id', $user->works_for)
+            ->where('is_active', true)
             ->get();
-            
+        
+        // Get customers for dropdown
+        $customers = Customer::where('owner_id', $user->works_for)->get();
+        
         return Inertia::render('SaleCreate', [
-            'products' => $products
+            'shops' => $shops,
+            'customers' => $customers
         ]);
     }
     
@@ -81,25 +89,32 @@ class SaleController extends Controller
         $user = auth()->user();
         
         $request->validate([
-            'item_id' => 'required|exists:items,id',
-            'item_name' => 'required|string',
+            'shop_id' => 'required|exists:shops,id',
+            'inventory_id' => 'required|exists:shop_inventories,id',
             'quantity' => 'required|integer|min:1',
-            'total' => 'required|numeric|min:0',
             'paid' => 'required|numeric|min:0',
-            'credit' => 'required|numeric|min:0',
-            'customer_name' => 'nullable|string',
-            'customer_phone' => 'nullable|string',
+            'customer_name' => 'nullable|string|max:255',
+            'customer_phone' => 'nullable|string|max:20',
             'note' => 'nullable|string',
         ]);
         
-        // Reduce product quantity
-        $item = Item::findOrFail($request->item_id);
-        if ($item->quantity < $request->quantity) {
-            return back()->withErrors(['quantity' => 'Not enough items in stock']);
+        // Get shop inventory item
+        $inventory = ShopInventory::with('item')->findOrFail($request->inventory_id);
+        
+        // Check if shop belongs to user's owner
+        $shop = Shop::findOrFail($request->shop_id);
+        if ($shop->owner_id !== $user->works_for) {
+            return redirect()->back()->with('error', 'You do not have permission to create sales for this shop');
         }
         
-        $item->quantity -= $request->quantity;
-        $item->save();
+        // Check if there's enough inventory
+        if ($inventory->quantity < $request->quantity) {
+            return redirect()->back()->with('error', 'Not enough inventory available');
+        }
+        
+        // Calculate total and credit
+        $total = $inventory->selling_price * $request->quantity;
+        $credit = $total - $request->paid;
         
         // Create customer if provided
         $customerId = null;
@@ -111,19 +126,24 @@ class SaleController extends Controller
             $customerId = $customer->id;
         }
         
-        // Create sale
+        // Create sale with customer_id if provided
         $sale = Sale::create([
-            'item_id' => $request->item_id,
-            'item_name' => $request->item_name,
+            'shop_id' => $request->shop_id,
+            'item_id' => $inventory->item_id,
+            'item_name' => $inventory->item->name,
             'quantity' => $request->quantity,
-            'total' => $request->total,
+            'total' => $total,
             'paid' => $request->paid,
-            'credit' => $request->credit,
-            'customer_id' => $customerId,
+            'credit' => $credit,
+            'customer_id' => $request->customer_id,
             'owner_id' => $user->works_for,
             'note' => $request->note,
-            'status' => $request->credit > 0 ? PaymentStatus::Pending : PaymentStatus::Completed,
+            'status' => $credit > 0 ? PaymentStatus::Pending : PaymentStatus::Completed,
         ]);
+        
+        // Update inventory
+        $inventory->quantity -= $request->quantity;
+        $inventory->save();
         
         return redirect()->route('sales.index')->with('message', 'Sale created successfully');
     }

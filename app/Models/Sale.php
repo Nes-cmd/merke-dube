@@ -13,16 +13,23 @@ class Sale extends Model
     protected $guarded = [];
 
     protected $fillable = [
+        'shop_id',
         'item_id',
+        'item_name',
+        'quantity',
+        'total',
+        'paid',
+        'credit',
+        'customer_id',
         'owner_id',
+        'note',
+        'status',
         'sale_price',
         'quantity_sold',
         'received_price',
-        'credit',
         'payment_status',
         'sold_at',
-        'note',
-        'approved_by',
+        'customer_id'
     ];
 
     protected function casts() : array
@@ -50,5 +57,21 @@ class Sale extends Model
 
     public function approvedBy(){
         return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    /**
+     * Get the shop that made the sale.
+     */
+    public function shop()
+    {
+        return $this->belongsTo(Shop::class);
+    }
+
+    /**
+     * Get the customer who made the purchase.
+     */
+    public function customer()
+    {
+        return $this->belongsTo(Customer::class);
     }
 }

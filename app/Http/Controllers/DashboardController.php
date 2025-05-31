@@ -2,51 +2,117 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Request;
 use App\Models\Item;
 use App\Models\Sale;
-use Illuminate\Http\Request;
+use App\Models\ShopInventory;
+use App\Models\Customer;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
+use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
     public function index()
     {
-        $user = auth()->user();
+        $user = Auth::user();
+        if (!$user) {
+            return redirect()->route('login');
+        }
+        
         $owner = $user->owner;
 
-        $myItems = Item::where('owner_id', $owner->id);
-        $mySales = Sale::where('owner_id', $owner->id);
-        
-        $dashboardData = [
-            'products' => [
-                'value' => $myItems->count(),
-                'label'  => ['am' => 'እቃዎች', 'en' => 'Products'],
-                'description' => ['am' => 'አጠቃላይ የእቃዎች ብዛት', 'en' => 'All products count'],
-            ],
-            'sales' => [
-                'value' => $mySales->count(),
-                'label'  => ['am' => 'የሽያጭ ብዛት', 'en' => 'Sales count'],
-                'description' => ['am' => 'አጠቃላይ የሽያጭ ብዛት', 'en' => 'All sales count'],
-            ],
-            'payable_credit' => [
-                'value' => $myItems->sum('credit'),
-                'label'  => ['am' => 'የሚከፈል ዱቤ', 'en' => 'Sum of credit'],
-                'description' => ['am' => 'አጠቃላይ የሚከፈል ዱቤ ድምር', 'en' => 'Sum of credit to be payed'],
-            ],
-            'collectable_credit' => [
-                'value' => $mySales->sum('credit'),
-                'label'  => ['am' => 'የሚሰበሰብ ዱቤ', 'en' => 'Collectable credit'],
-                'description' => ['am' => 'አጠቃላይ የሚሰበሰብ ዱቤ ድምር', 'en' => 'Sum of credit to be collected'],
-            ],
-            'sales_of_last_30' => [
-                'value' => $mySales->whereDay('created_at', '>=', now()->subDays(30))->count(),
-                'label'  => ['am' => 'የ30 ቀን ሽያጭ', 'en' => '30 days sale'],
-                'description' => ['am' => 'ያለፈው የ30 ቀን ሽያጭ ብዛት', 'en' => 'Past 30 days sales count'],
-            ],
-        ];
-        
+        // Get inventory data
+        $shopInventory = ShopInventory::whereHas('shop', function($query) use ($owner) {
+            $query->where('owner_id', $owner->id);
+        })->with(['item', 'shop'])->get();
+
+        // Calculate total credit from shop inventory
+        $totalCredit = $shopInventory->sum('credit');
+
+        // Calculate total products value
+        $totalProductsValue = $shopInventory->sum(function($inventory) {
+            return $inventory->quantity * $inventory->item->unit_price;
+        });
+
+        // Get recent sales
+        $recentSales = Sale::where('owner_id', $owner->id)
+            ->with(['customer', 'shop'])
+            ->orderBy('created_at', 'desc')
+            ->take(5)
+            ->get();
+
+        // Get low stock items
+        $lowStockItems = ShopInventory::whereHas('shop', function($query) use ($owner) {
+            $query->where('owner_id', $owner->id);
+        })
+        ->where('quantity', '<', 5)  // Define your threshold for low stock
+        ->with(['item', 'shop'])
+        ->take(5)
+        ->get();
+
+        // Get items expiring soon
+        $expiringItems = Item::where('owner_id', $owner->id)
+            ->whereNotNull('expiry_date')
+            ->where('expiry_date', '>', now())
+            ->where('expiry_date', '<', now()->addDays(30))  // Items expiring in next 30 days
+            ->with(['store'])
+            ->take(5)
+            ->get();
+
+        // Get total customers
+        $totalCustomers = Customer::where('owner_id', $owner->id)->count();
+
+        // Get sales data for chart
+        $salesData = $this->getSalesChartData($owner->id);
+
         return Inertia::render('Dashboard', [
-            'dashboardData' => $dashboardData
+            'totalCredit' => $totalCredit,
+            'totalProductsValue' => $totalProductsValue,
+            'recentSales' => $recentSales,
+            'lowStockItems' => $lowStockItems,
+            'expiringItems' => $expiringItems,
+            'totalCustomers' => $totalCustomers,
+            'salesData' => $salesData,
         ]);
+    }
+
+    private function getSalesChartData($ownerId)
+    {
+        // Get sales for the last 30 days
+        $startDate = Carbon::now()->subDays(30)->startOfDay();
+        $endDate = Carbon::now()->endOfDay();
+
+        $sales = Sale::where('owner_id', $ownerId)
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->get();
+
+        // Group sales by day
+        $salesByDay = $sales->groupBy(function($sale) {
+            return Carbon::parse($sale->created_at)->format('Y-m-d');
+        });
+
+        // Create an array of all days in the range
+        $dateRange = [];
+        $currentDate = $startDate->copy();
+        while ($currentDate <= $endDate) {
+            $dateKey = $currentDate->format('Y-m-d');
+            $dateRange[$dateKey] = [
+                'date' => $dateKey,
+                'total' => 0,
+                'count' => 0,
+            ];
+            $currentDate->addDay();
+        }
+
+        // Fill in sales data
+        foreach ($salesByDay as $date => $daySales) {
+            if (isset($dateRange[$date])) {
+                $dateRange[$date]['total'] = $daySales->sum('total');
+                $dateRange[$date]['count'] = $daySales->count();
+            }
+        }
+
+        return array_values($dateRange);
     }
 } 
