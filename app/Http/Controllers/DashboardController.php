@@ -10,70 +10,20 @@ use App\Models\Customer;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Carbon\Carbon;
+use App\Models\Shop;
+use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Api\DashboardController as ApiDashboardController;
 
 class DashboardController extends Controller
 {
     public function index()
     {
-        $user = Auth::user();
-        if (!$user) {
-            return redirect()->route('login');
-        }
+        // Get dashboard data from API controller
+        $apiController = new ApiDashboardController();
+        $stats = $apiController->index();
         
-        $owner = $user->owner;
-
-        // Get inventory data
-        $shopInventory = ShopInventory::whereHas('shop', function($query) use ($owner) {
-            $query->where('owner_id', $owner->id);
-        })->with(['item', 'shop'])->get();
-
-        // Calculate total credit from shop inventory
-        $totalCredit = $shopInventory->sum('credit');
-
-        // Calculate total products value
-        $totalProductsValue = $shopInventory->sum(function($inventory) {
-            return $inventory->quantity * $inventory->item->unit_price;
-        });
-
-        // Get recent sales
-        $recentSales = Sale::where('owner_id', $owner->id)
-            ->with(['customer', 'shop'])
-            ->orderBy('created_at', 'desc')
-            ->take(5)
-            ->get();
-
-        // Get low stock items
-        $lowStockItems = ShopInventory::whereHas('shop', function($query) use ($owner) {
-            $query->where('owner_id', $owner->id);
-        })
-        ->where('quantity', '<', 5)  // Define your threshold for low stock
-        ->with(['item', 'shop'])
-        ->take(5)
-        ->get();
-
-        // Get items expiring soon
-        $expiringItems = Item::where('owner_id', $owner->id)
-            ->whereNotNull('expiry_date')
-            ->where('expiry_date', '>', now())
-            ->where('expiry_date', '<', now()->addDays(30))  // Items expiring in next 30 days
-            ->with(['store'])
-            ->take(5)
-            ->get();
-
-        // Get total customers
-        $totalCustomers = Customer::where('owner_id', $owner->id)->count();
-
-        // Get sales data for chart
-        $salesData = $this->getSalesChartData($owner->id);
-
         return Inertia::render('Dashboard', [
-            'totalCredit' => $totalCredit,
-            'totalProductsValue' => $totalProductsValue,
-            'recentSales' => $recentSales,
-            'lowStockItems' => $lowStockItems,
-            'expiringItems' => $expiringItems,
-            'totalCustomers' => $totalCustomers,
-            'salesData' => $salesData,
+            'stats' => $stats
         ]);
     }
 

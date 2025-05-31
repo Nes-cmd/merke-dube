@@ -269,20 +269,7 @@ const Products = ({ auth, products, warehouses }) => {
         return `ETB ${numericPrice.toFixed(2)}`;
       },
     },
-    {
-      title: t('Status'),
-      dataIndex: 'statusText',
-      key: 'status',
-      filters: [
-        { text: t('Pending'), value: t('Pending') },
-        { text: t('Completed'), value: t('Completed') },
-        { text: t('Cancelled'), value: t('Cancelled') },
-      ],
-      onFilter: (value, record) => record.statusText === value,
-      render: (text, record) => (
-        <Tag color={record.statusColor}>{text}</Tag>
-      ),
-    },
+  
     {
       title: t('Actions'),
       key: 'action',

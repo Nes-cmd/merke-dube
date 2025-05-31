@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { fetchStores, createStore, deleteStore } from '../store/slices/storesSlice';
+// import { useDispatch, useSelector } from 'react-redux';
+// import { fetchStores, createStore, deleteStore } from '../store/slices/storesSlice';
 import { Card, Button, List, Spin, Alert, Modal, Form, Input, message } from 'antd';
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
-import { useTranslation } from 'react-i18next';
+// import { useTranslation } from 'react-i18next';
 
 const Stores = () => {
   const dispatch = useDispatch();

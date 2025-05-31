@@ -30,28 +30,47 @@ export default function AuthenticatedLayout({ user, header, children }) {
   };
 
   const isActive = (path) => {
-   
-    return url.startsWith(path);
+    // For route paths that start with /, check if the URL starts with the path
+    if (path.startsWith('/')) {
+      return url.startsWith(path);
+    }
+    
+    // For named routes, extract the path part
+    const routePath = path.split('://')[1] || path;
+    return url === routePath || url.startsWith(routePath);
   };
 
-  const navItems = [
-    { name: t('Dashboard'), path: route('dashboard'), icon: <DashboardOutlined /> },
+  // Main navigation items
+  const mainNavItems = [
+    { name: t('Dashboard'), path: '/dashboard', icon: <DashboardOutlined /> },
     { name: t('Products'), path: '/products', icon: <BarcodeOutlined /> },
     { name: t('Sales'), path: '/sales', icon: <FileDoneOutlined /> },
-    { name: t('Warehouses'), path: route('warehouses.index'), icon: <HomeOutlined /> },
+    { name: t('Settings'), path: '/settings', icon: <SettingOutlined /> },
+  ];
+
+  // Mobile navigation items (for bottom bar)
+  const mobileNavItems = [
+    { name: t('Dashboard'), path: '/dashboard', icon: <DashboardOutlined /> },
+    { name: t('Products'), path: '/products', icon: <BarcodeOutlined /> },
+    { name: t('Sales'), path: '/sales', icon: <FileDoneOutlined /> },
+    { name: t('Settings'), path: '/settings', icon: <SettingOutlined /> },
+  ];
+  
+  // Sidebar-only items
+  const sidebarItems = [
+    ...mainNavItems,
+    { name: t('Warehouses'), path: '/warehouses', icon: <HomeOutlined /> },
     { name: t('Customers'), path: '/customers', icon: <TeamOutlined /> },
     { name: t('Inventory'), path: '/inventory', icon: <ShopOutlined /> },
-    { name: t('Settings'), path: route('settings.index'), icon: <SettingOutlined /> },
   ];
 
   const userMenu = (
     <Menu>
       <Menu.Item key="profile" icon={<UserOutlined />}>
-        <Link href={route('profile.edit')} method="get">
+        <Link href={route('profile.edit')}>
           {t('Profile')}
         </Link>
       </Menu.Item>
-      <Menu.Divider />
       <Menu.Item key="logout" icon={<LogoutOutlined />} danger>
         <Link href={route('logout')} method="post" as="button" className="w-full text-left">
           {t('Logout')}
@@ -62,88 +81,85 @@ export default function AuthenticatedLayout({ user, header, children }) {
 
   return (
     <Layout className="min-h-screen">
-      {/* Top Header for Desktop */}
-      <Header className="hidden lg:flex z-10 justify-between items-center bg-white shadow-md px-6 h-16 fixed w-full top-0">
-        <div className="flex items-center">
-          <Link href={route('dashboard')} className="text-xl font-bold text-primary-500 no-underline mr-8">
-            Suqee
-          </Link>
-          
-          <nav>
-            <ul className="flex space-x-6">
-              {navItems.map((item) => (
-                <li key={item.name}>
-                  <Link
-                    href={item.path}
-                    className={`flex items-center space-x-2 px-6 py-2 rounded-md ${
-                      isActive(item.path)
-                        ? 'bg-primary-600 text-white'
-                        : 'text-primary-600 hover:bg-primary-200'
-                    }`}
-                  >
-                    {item.icon}
-                    <span>{item.name}</span>
-                  </Link>
-                </li>
+      {/* Desktop Header */}
+      <Header className="fixed w-full z-10 px-0 shadow-md bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
+          {/* Logo and Desktop Menu */}
+          <div className="flex items-center">
+            <Link href={route('dashboard')} className="text-2xl font-bold text-primary-600 mr-8">
+              Suqee
+            </Link>
+            
+            {/* Desktop Navigation */}
+            <nav className="hidden lg:flex space-x-6">
+              {mainNavItems.map((item) => (
+                <Link
+                  key={item.name}
+                  href={item.path}
+                  className={`flex items-center px-3 py-2 rounded-md transition-colors ${
+                    isActive(item.path)
+                      ? 'bg-primary-100 text-primary-600 font-semibold'
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  <span className="mr-2">{item.icon}</span>
+                  <span>{item.name}</span>
+                </Link>
               ))}
-            </ul>
-          </nav>
-        </div>
-        
-        <div className="flex items-center space-x-4">
-          <Button 
-            icon={<GlobalOutlined />}
-            onClick={handleLanguageChange} 
-            className="border border-primary-500 text-primary-500 hover:bg-primary-50"
-            size="middle"
-          >
-            {locale === 'en' ? 'አማርኛ' : 'English'}
-          </Button>
-          
-          <Dropdown overlay={userMenu} trigger={['click']} placement="bottomRight">
-            <div className="flex items-center space-x-2 cursor-pointer">
-              <span className="text-gray-700">{user?.name}</span>
-              <UserOutlined className="text-lg text-primary-500" />
-            </div>
-          </Dropdown>
-        </div>
-      </Header>
+            </nav>
+          </div>
 
-      {/* Mobile Header */}
-      <Header className="lg:hidden flex justify-between items-center bg-white shadow-md px-4 h-16 fixed w-full top-0 z-10">
-        <Link href={route('dashboard')} className="text-xl font-bold text-primary-500 no-underline">
-          Suqee
-        </Link>
-        
-        <div className="flex items-center space-x-2">
-          <Button 
-            icon={<GlobalOutlined />}
-            onClick={handleLanguageChange} 
-            type="text"
-            size="middle"
-            className="text-primary-500"
-          />
-          
-          <Button 
-            icon={<MenuOutlined />} 
-            onClick={() => setMobileMenuOpen(true)} 
-            type="text" 
-            size="large"
-            className="text-primary-500"
-          />
+          {/* Right Side Menu */}
+          <div className="flex items-center space-x-4">
+            {/* Language Switcher */}
+            <Button
+              icon={<GlobalOutlined />}
+              onClick={handleLanguageChange}
+              className="hidden sm:flex items-center"
+              type="text"
+            >
+              {locale === 'en' ? 'አማርኛ' : 'English'}
+            </Button>
+
+            {/* User Menu (Desktop) */}
+            <Dropdown overlay={userMenu} placement="bottomRight" arrow>
+              <Button
+                type="text"
+                className="hidden sm:flex items-center text-gray-700"
+                icon={<UserOutlined className="mr-1" />}
+              >
+                {user?.name}
+              </Button>
+            </Dropdown>
+
+            {/* Mobile Menu Button */}
+            <Button
+              icon={<MenuOutlined />}
+              onClick={() => setMobileMenuOpen(true)}
+              className="lg:hidden"
+            />
+          </div>
         </div>
         
+        {/* Mobile Drawer */}
         <Drawer
-          title={user?.name}
+          title={
+            <div className="flex items-center justify-between">
+              <span className="text-xl font-bold text-primary-600">Suqee</span>
+              <Button icon={<GlobalOutlined />} onClick={handleLanguageChange}>
+                {locale === 'en' ? 'አማርኛ' : 'English'}
+              </Button>
+            </div>
+          }
           placement="right"
           onClose={() => setMobileMenuOpen(false)}
           open={mobileMenuOpen}
           width={280}
         >
-          <Menu mode="vertical" className="border-r-0">
-            {navItems.map((item) => (
+          <Menu mode="vertical">
+            {sidebarItems.map((item) => (
               <Menu.Item key={item.name} icon={item.icon}>
-                <Link 
+                <Link
                   href={item.path}
                   className={isActive(item.path) ? 'text-primary-600 font-semibold' : ''}
                 >
@@ -152,11 +168,6 @@ export default function AuthenticatedLayout({ user, header, children }) {
               </Menu.Item>
             ))}
             <Menu.Divider />
-            <Menu.Item key="profile" icon={<UserOutlined />}>
-              <Link href={route('profile.edit')}>
-                {t('Profile')}
-              </Link>
-            </Menu.Item>
             <Menu.Item key="logout" icon={<LogoutOutlined />} danger>
               <Link href={route('logout')} method="post" as="button" className="w-full text-left">
                 {t('Logout')}
@@ -174,7 +185,7 @@ export default function AuthenticatedLayout({ user, header, children }) {
       {/* Mobile Bottom Navigation */}
       <nav className="lg:hidden fixed bottom-0 z-10 w-full bg-primary-100 shadow-lg">
         <ul className="flex justify-around">
-          {navItems.map((item) => (
+          {mobileNavItems.map((item) => (
             <li key={item.name} className="flex-1">
               <Link
                 href={item.path}

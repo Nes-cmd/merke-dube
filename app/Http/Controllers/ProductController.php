@@ -15,10 +15,11 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class ProductController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = auth()->user();
         $products = Item::with('category', 'store', 'supplier', 'images')
@@ -64,109 +65,83 @@ class ProductController extends Controller
     {
         $user = auth()->user();
         
-        // Get categories for dropdown
-        $categories = Category::where('owner_id', $user->works_for)->get();
-        
-        // Get warehouses for dropdown
-        $warehouses = Store::where('owner_id', $user->works_for)->get();
-        
-        // Get suppliers (customers) for dropdown
-        $suppliers = Customer::where('owner_id', $user->works_for)->get();
-        
         return Inertia::render('ProductCreate', [
-            'categories' => $categories,
-            'warehouses' => $warehouses,
-            'suppliers' => $suppliers
+            'categories' => Category::where('owner_id', $user->works_for)->get(),
+            'warehouses' => Store::where('owner_id', $user->works_for)->get(),
+            'suppliers' => Customer::where('owner_id', $user->works_for)
+                ->where('is_supplier', true)
+                ->get()
         ]);
     }
     
     public function store(Request $request)
     {
-        $user = Auth::user();
-        if (!$user) {
-            return redirect()->route('login');
-        }
-        
-        // Log for debugging
-        \Log::info('Received product creation request', [
-            'has_files' => $request->hasFile('images'),
-            'files_count' => $request->hasFile('images') ? count($request->file('images')) : 0,
-            'all_data' => $request->all()
-        ]);
-        
-        // Validate the request data
-        $validatedData = $request->validate([
+        $request->validate([
             'name' => 'required|string|max:255',
-            'remark' => 'nullable|string',
-            'quantity' => 'required|numeric|min:0',
-            'unit_price' => 'required|numeric|min:0',
-            'category_id' => 'nullable|exists:categories,id',
+            'description' => 'nullable|string',
+            'category_id' => 'required|exists:categories,id',
             'store_id' => 'required|exists:stores,id',
             'supplier_id' => 'nullable|exists:customers,id',
+            'unit_price' => 'required|numeric|min:0',
+            'cost_price' => 'nullable|numeric|min:0',
+            'quantity' => 'required|integer|min:0',
+            'barcode' => 'nullable|string|max:255',
             'sku' => 'nullable|string|max:255',
-            'code' => 'nullable|string|max:255',
-            'batch_number' => 'nullable|string|max:255',
-            'manufacture_date' => 'nullable|date',
-            'expiry_date' => 'nullable|date|after_or_equal:manufacture_date',
-            'images' => 'nullable|array',
-            'images.*' => 'nullable|image|max:2048',
+            'images.*' => 'nullable|image|max:2048'
         ]);
         
-        // Create the new product
-        $product = Item::create([
+        $user = auth()->user();
+        
+        // Create the item
+        $item = Item::create([
             'name' => $request->name,
-            'remark' => $request->remark,
-            'quantity' => $request->quantity,
-            'unit_price' => $request->unit_price,
-            'paid' => 0, // Default value for new products
-            'credit' => 0, // Default value for new products
+            'description' => $request->description,
+            'owner_id' => $user->works_for,
             'category_id' => $request->category_id,
             'store_id' => $request->store_id,
             'supplier_id' => $request->supplier_id,
-            'owner_id' => $user->works_for,
-            'status' => \App\Enums\PaymentStatus::Pending->value,
-            'sku' => $request->sku,
-            'code' => $request->code,
-            'batch_number' => $request->batch_number,
-            'manufacture_date' => $request->manufacture_date,
-            'expiry_date' => $request->expiry_date,
-            'refill_count' => 0,
+            'unit_price' => $request->unit_price,
+            'cost_price' => $request->cost_price,
+            'quantity' => $request->quantity,
+            'barcode' => $request->barcode,
+            'sku' => $request->sku ?: Str::random(8),
+            'created_by' => $user->id,
         ]);
         
-        // Handle image uploads if they exist
+        // Handle image uploads
         if ($request->hasFile('images')) {
-            $images = $request->file('images');
+            $primarySet = false;
             $sortOrder = 0;
             
-            foreach ($images as $image) {
-                try {
-                    $path = $image->store('product-images', 'public');
-                    
-                    \Log::info('Stored image', [
-                        'path' => $path,
-                        'product_id' => $product->id,
-                        'sort_order' => $sortOrder
-                    ]);
-                    
-                    // Create image record
-                    ItemImage::create([
-                        'item_id' => $product->id,
-                        'image_path' => $path,
-                        'is_primary' => $sortOrder === 0, // First image is primary
-                        'sort_order' => $sortOrder,
-                    ]);
-                    
-                    $sortOrder++;
-                } catch (\Exception $e) {
-                    \Log::error('Failed to store image', [
-                        'error' => $e->getMessage(),
-                        'trace' => $e->getTraceAsString()
-                    ]);
+            foreach ($request->file('images') as $imageFile) {
+                $path = $imageFile->store('product-images', 'public');
+                
+                ItemImage::create([
+                    'item_id' => $item->id,
+                    'image_path' => $path,
+                    'is_primary' => !$primarySet,
+                    'sort_order' => $sortOrder++
+                ]);
+                
+                if (!$primarySet) {
+                    $primarySet = true;
                 }
             }
         }
         
-        return redirect()->route('products.show', $product->id)
+        // Record initial inventory as a refill
+        if ($request->quantity > 0) {
+            ItemRefill::create([
+                'item_id' => $item->id,
+                'quantity' => $request->quantity,
+                'purchase_price' => $request->cost_price ?: 0,
+                'supplier_id' => $request->supplier_id,
+                'refilled_by' => $user->id,
+                'note' => 'Initial inventory'
+            ]);
+        }
+        
+        return redirect()->route('products.index')
             ->with('message', 'Product created successfully');
     }
     

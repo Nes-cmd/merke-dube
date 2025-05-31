@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\SubcategoryController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Middleware\AdminMiddleware;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
 
 Route::post('auth/login', [AuthController::class, 'login']);
 Route::middleware('api')->post('auth/register', [AuthController::class, 'register']);
@@ -52,5 +53,11 @@ Route::middleware('auth:sanctum')->group(function(){
     Route::middleware(AdminMiddleware::class)->get('workers', [UserController::class, 'workers']);
     Route::middleware(AdminMiddleware::class)->post('add-worker', [UserController::class, 'addWorker']);
     Route::middleware(AdminMiddleware::class)->delete('remove-worker/{id}', [UserController::class, 'removeWorker']);
+
+    Route::get('dashboard', [DashboardController::class, 'index']);
+});
+
+Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+    return $request->user();
 });
 
