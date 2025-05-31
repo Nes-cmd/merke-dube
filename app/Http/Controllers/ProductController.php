@@ -69,7 +69,7 @@ class ProductController extends Controller
             'categories' => Category::where('owner_id', $user->works_for)->get(),
             'warehouses' => Store::where('owner_id', $user->works_for)->get(),
             'suppliers' => Customer::where('owner_id', $user->works_for)
-                ->where('is_supplier', true)
+                // ->where('is_supplier', true)
                 ->get()
         ]);
     }
