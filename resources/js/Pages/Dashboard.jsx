@@ -33,22 +33,22 @@ const Dashboard = ({ auth, stats }) => {
         <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
           <div>
             <Row gutter={16} className="mb-6">
-              <Col xs={24} sm={12} md={6} className="mb-4">
+              <Col xs={12} sm={12} md={6} className="mb-4">
                 <Card>
                   {renderStatistic(stats.products, <ShoppingOutlined />)}
                 </Card>
               </Col>
-              <Col xs={24} sm={12} md={6} className="mb-4">
+              <Col xs={12} sm={12} md={6} className="mb-4">
                 <Card>
                   {renderStatistic(stats.sales, <DollarOutlined />)}
                 </Card>
               </Col>
-              <Col xs={24} sm={12} md={6} className="mb-4">
+              <Col xs={12} sm={12} md={6} className="mb-4">
                 <Card>
                   {renderStatistic(stats.payable_credit, <ShopOutlined />)}
                 </Card>
               </Col>
-              <Col xs={24} sm={12} md={6} className="mb-4">
+              <Col xs={12} sm={12} md={6} className="mb-4">
                 <Card>
                   {renderStatistic(stats.collectable_credit, <UserOutlined />)}
                 </Card>
