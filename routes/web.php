@@ -5,6 +5,8 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use App\Http\Controllers\InventoryController;
+use App\Http\Controllers\SaleController;
 
 Route::get('/', function () {
    
@@ -43,10 +45,12 @@ Route::middleware('auth')->group(function () {
     Route::put('/products/{id}', [App\Http\Controllers\ProductController::class, 'update'])->name('products.update');
     
     // Sales routes
-    Route::get('/sales', [App\Http\Controllers\SaleController::class, 'index'])->name('sales.index');
-    Route::get('/sales/create', [App\Http\Controllers\SaleController::class, 'create'])->name('sales.create');
-    Route::get('/sales/{id}', [App\Http\Controllers\SaleController::class, 'show'])->name('sales.show');
-    Route::post('/sales/{id}/credit-payed', [App\Http\Controllers\SaleController::class, 'creditPayed'])->name('sales.credit-payed');
+    Route::get('/sales', [SaleController::class, 'index'])->name('sales.index');
+    Route::get('/sales/{id}', [SaleController::class, 'show'])->name('sales.show');
+    Route::post('/sales', [SaleController::class, 'store'])->name('sales.store');
+    Route::post('/sales/{id}/credit-payed', [SaleController::class, 'creditPayed'])->name('sales.credit-payed');
+    Route::post('/sales/credit/{id}/accept', [SaleController::class, 'acceptCredit'])->name('sales.accept-credit');
+    Route::get('/sales/shop-inventory/{shopId}', [SaleController::class, 'getShopInventory'])->name('sales.shop-inventory');
     
     // Warehouse routes
     Route::get('/warehouses', [App\Http\Controllers\WarehouseController::class, 'index'])->name('warehouses.index');
@@ -89,10 +93,12 @@ Route::put('/customers/{id}', [App\Http\Controllers\CustomerController::class, '
 Route::delete('/customers/{id}', [App\Http\Controllers\CustomerController::class, 'destroy'])->name('customers.destroy');
 
 // Inventory routes
-Route::get('/inventory', [App\Http\Controllers\InventoryController::class, 'index'])->name('inventory.index');
-Route::get('/inventory/create', [App\Http\Controllers\InventoryController::class, 'create'])->name('inventory.create');
-Route::post('/inventory', [App\Http\Controllers\InventoryController::class, 'store'])->name('inventory.store');
-Route::put('/inventory/{id}', [App\Http\Controllers\InventoryController::class, 'update'])->name('inventory.update');
-Route::delete('/inventory/{id}', [App\Http\Controllers\InventoryController::class, 'destroy'])->name('inventory.destroy');
+Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
+Route::get('/inventory/create', [InventoryController::class, 'create'])->name('inventory.create');
+Route::post('/inventory', [InventoryController::class, 'store'])->name('inventory.store');
+Route::get('/inventory/{id}/edit', [InventoryController::class, 'edit'])->name('inventory.edit');
+Route::post('/inventory/{id}', [InventoryController::class, 'update'])->name('inventory.update');
+Route::post('/inventory/{id}/refill', [InventoryController::class, 'refill'])->name('inventory.refill');
+Route::delete('/inventory/{id}', [InventoryController::class, 'destroy'])->name('inventory.destroy');
 
 

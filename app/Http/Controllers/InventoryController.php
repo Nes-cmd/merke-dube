@@ -15,7 +15,7 @@ class InventoryController extends Controller
         $user = auth()->user();
         
         // Get all inventory across all shops with relationships
-        $inventory = ShopInventory::with(['shop', 'item'])
+        $inventory = ShopInventory::with(['shop', 'item', 'item.category', 'item.images'])
             ->whereHas('shop', function ($query) use ($user) {
                 $query->where('owner_id', $user->works_for);
             })
@@ -105,45 +105,51 @@ class InventoryController extends Controller
         return redirect()->route('inventory.index')->with('message', 'Inventory added successfully');
     }
     
+    public function edit($id)
+    {
+        $user = auth()->user();
+        
+        // Get the inventory item with relationships
+        $inventory = ShopInventory::with(['shop', 'item'])
+            ->findOrFail($id);
+        
+        // Ensure shop belongs to user's organization
+        if ($inventory->shop->owner_id !== $user->works_for) {
+            return redirect()->route('inventory.index')
+                ->with('error', 'You do not have permission to edit this inventory item');
+        }
+        
+        // Get shops for dropdown
+        $shops = Shop::where('owner_id', $user->works_for)->get();
+        
+        return Inertia::render('InventoryEdit', [
+            'inventory' => $inventory,
+            'shops' => $shops
+        ]);
+    }
+    
     public function update(Request $request, $id)
     {
         $user = auth()->user();
         
         $request->validate([
             'quantity' => 'required|integer|min:0',
-            'selling_price' => 'required|numeric|min:0',
         ]);
         
-        $inventory = ShopInventory::with(['shop', 'item'])->findOrFail($id);
+        $inventory = ShopInventory::with('shop')->findOrFail($id);
         
-        // Check if shop belongs to user's organization
+        // Ensure shop belongs to user's organization
         if ($inventory->shop->owner_id !== $user->works_for) {
-            return redirect()->back()->with('error', 'You do not have permission to update this inventory');
-        }
-        
-        $quantityDifference = $request->quantity - $inventory->quantity;
-        
-        // If reducing inventory, increase warehouse inventory
-        if ($quantityDifference < 0) {
-            $inventory->item->quantity += abs($quantityDifference);
-            $inventory->item->save();
-        } 
-        // If increasing inventory, check and decrease warehouse inventory
-        else if ($quantityDifference > 0) {
-            if ($inventory->item->quantity < $quantityDifference) {
-                return redirect()->back()->with('error', 'Not enough inventory in warehouse');
-            }
-            
-            $inventory->item->quantity -= $quantityDifference;
-            $inventory->item->save();
+            return redirect()->route('inventory.index')
+                ->with('error', 'You do not have permission to update this inventory item');
         }
         
         // Update inventory
         $inventory->quantity = $request->quantity;
-        $inventory->selling_price = $request->selling_price;
         $inventory->save();
         
-        return redirect()->back()->with('message', 'Inventory updated successfully');
+        return redirect()->route('inventory.index')
+            ->with('message', 'Inventory updated successfully');
     }
     
     public function destroy($id)
@@ -164,5 +170,44 @@ class InventoryController extends Controller
         $inventory->delete();
         
         return redirect()->back()->with('message', 'Inventory removed successfully');
+    }
+
+    public function refill(Request $request, $id)
+    {
+        $user = auth()->user();
+        
+        $request->validate([
+            'quantity' => 'required|integer|min:1',
+        ]);
+        
+        // Get the inventory item with relationships
+        $inventory = ShopInventory::with(['shop', 'item'])->findOrFail($id);
+        
+        // Ensure shop belongs to user's organization
+        if ($inventory->shop->owner_id !== $user->works_for) {
+            return response()->json([
+                'message' => 'You do not have permission to refill this inventory item'
+            ], 403);
+        }
+        
+        // Check if warehouse has enough stock
+        if ($inventory->item->quantity < $request->quantity) {
+            return response()->json([
+                'message' => 'Not enough inventory in warehouse'
+            ], 422);
+        }
+        
+        // Update shop inventory
+        $inventory->quantity += $request->quantity;
+        $inventory->save();
+        
+        // Reduce warehouse inventory
+        $inventory->item->quantity -= $request->quantity;
+        $inventory->item->save();
+        
+        return response()->json([
+            'message' => 'Inventory refilled successfully',
+            'inventory' => $inventory
+        ]);
     }
 } 
